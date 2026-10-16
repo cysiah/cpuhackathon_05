@@ -1,9 +1,13 @@
-"""Rebuild js/data.js from the Atrium Heat Lab starter data.
+"""Rebuild the generated data files in js/ from the Atrium Heat Lab starter data.
 
 Usage:
     python tools/build_data.py path/to/4_Atrium_Heat_Lab/data
 
-Reads baseline.json, climate.json and sweep.json and writes two files.
+Reads baseline.json, climate.json, sweep.json, radiation.json and
+context.json and writes three files.
+
+js/building.js holds the envelope analysis mesh, its four Ladybug radiation
+studies and the surrounding context massing for the building section.
 
 js/sweep.js holds every design in the sweep for the design explorer: lever
 levels, scores, peaks, hours over 26/28 C, solar gain, the off-grid validation
@@ -73,6 +77,33 @@ def main(folder):
         "validation": [{k: d[k] for k in keys + ["score"]} for d in sweep.get("validation", [])],
     }
     write_js("sweep.js", "SWEEP", explorer)
+
+    # Envelope radiation model for the building section: Ladybug analysis mesh
+    # (Rhino metres, Z up), four studies, and the surrounding context massing.
+    rad = load(folder, "radiation.json")
+    ctx = load(folder, "context.json")
+    cats = sorted(set(rad["category"]))
+    faces = []
+    for f in rad["faces"]:
+        faces.extend(list(f) + [-1] * (4 - len(f)))
+    cv, ct = [], []
+    for m in ctx["meshes"]:
+        off = len(cv) // 3
+        for p in m["v"]:
+            cv.extend(round(x, 2) for x in p)
+        for t in m["f"]:
+            ct.extend(off + i for i in t)
+    building = {
+        "north": ctx["north_deg"],
+        "cats": cats,
+        "cat": [cats.index(c) for c in rad["category"]],
+        "area": [round(a, 2) for a in rad["area_m2"]],
+        "v": [round(x, 2) for p in rad["vertices"] for x in p],
+        "f": faces,
+        "results": {k: [round(x, 1) for x in v] for k, v in rad["results"].items()},
+        "ctx": {"v": cv, "t": ct},
+    }
+    write_js("building.js", "BLD", building)
 
 
 OP_MIN = 12.0

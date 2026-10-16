@@ -20,6 +20,7 @@
       <a href="#baseline">Baseline</a>
       <a href="#floor">Outdoor air</a>
       <a href="#heat">Heat balance</a>
+      <a href="#building">Building</a>
       <a href="#space">Design space</a>
       <a href="#explore">Explorer</a>
       <a class="keep" href="#headroom">Headroom</a>
@@ -126,6 +127,49 @@
     </div>
     <div class="fig square"><canvas id="c-heat" role="img" aria-label="Exploded isometric of the atrium: roof glass grid on top, air volume in the middle, exposed concrete below. Sunlight particles fall; about half pass through the glass."></canvas></div>
   </div>
+</section>
+
+<!-- BUILDING: rebuild of section 2 of the Atrium Heat Lab starter app -->
+<section class="band k bld" id="building">
+  <div class="ticker" aria-hidden="true"><div class="ticker-track"><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span></div></div>
+  <div class="wrap">
+    <div class="grid">
+      <div class="copy">
+        <div class="eyebrow"><span>02 · Building</span><span>Envelope radiation</span></div>
+        <h2>Where the heat comes in</h2>
+      </div>
+      <div class="copy">
+        <p>Ladybug incident radiation on the outward-facing envelope, shaded by the surrounding city. Drag to orbit, scroll to zoom, and hover a surface for its value.</p>
+      </div>
+    </div>
+    <div class="b-bar">
+      <div class="seg" role="group" aria-label="Radiation study">
+        <button type="button" data-key="hot_week" aria-pressed="true">Hot week</button><button type="button" data-key="annual">Annual</button><button type="button" data-key="benefit_present">Benefit/harm today</button><button type="button" data-key="benefit_future">Benefit/harm 2050</button>
+      </div>
+      <div class="b-legend"><span id="b-lo">0</span><span class="b-ramp" id="b-ramp"></span><span id="b-hi">42 kWh/m²</span></div>
+    </div>
+    <div class="b-stage">
+      <div class="b-viewer" id="b-viewer" role="img" aria-label="3D model of the Geoffrey Manton building and its neighbours. Envelope surfaces are coloured from blue (little sun) to pink (most sun).">
+        <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
+        <span class="b-tag tl">MODEL_SPACE · RHINO M · Z UP</span>
+        <span class="b-tag bl">DRAG TO ORBIT · SCROLL TO ZOOM · HOVER A SURFACE</span>
+      </div>
+      <aside class="b-hud" aria-live="polite">
+        <span class="b-hello">HELLO</span>
+        <span class="b-line"><span id="b-label">ATRIUM_ROOF</span><span id="b-study">HOT_WEEK</span></span>
+        <b class="b-big" id="b-big">–</b>
+        <span class="b-unit">kWh/m²</span>
+        <span class="b-line"><span id="b-sub">AVERAGE</span></span>
+        <span class="b-load">LOADING_MODEL <span class="b-blink">■</span></span>
+      </aside>
+    </div>
+    <p class="b-insight" id="b-insight"></p>
+    <div class="b-bars">
+      <h3 class="b-h3">Solar energy by building element</h3>
+      <div class="fig b-barsfig"><canvas id="c-bars" role="img" aria-label="Segmented bar chart of solar energy received by each building element over the chosen period. Atrium elements are pink."></canvas></div>
+    </div>
+  </div>
+  <div class="ticker rev" aria-hidden="true"><div class="ticker-track"><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span></div></div>
 </section>
 
 <!-- DESIGN SPACE -->
@@ -258,5 +302,9 @@
 <script src="js/sweep.js"></script>
 <script src="js/diagrams.js"></script>
 <script src="js/explorer.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="js/building.js"></script>
+<script src="js/building-view.js"></script>
 </body>
 </html>
