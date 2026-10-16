@@ -18,7 +18,7 @@ Deliverables:
 
 ## Current direction (being explored)
 
-Floor-plan heatmaps on the GF and 3F planes, with multiple parameter layers you can cross-reference:
+Floor-plan heatmaps on **isolated GF and 5F floorplates** (not the single atrium box). The areas will later be classified as **enclosed, open or void**. Parameter layers you can cross-reference:
 - sun hours
 - radiation
 - overheating K·h per point (EnergyPlus air temperature + Ladybug solar MRT)
