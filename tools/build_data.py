@@ -17,6 +17,7 @@ js/data.js holds the compact dataset the diagrams use:
     op      atrium operative temperature, hot week (168 h), EnergyPlus baseline
     out     outdoor dry-bulb, hot week, 2050 file
     pre     outdoor dry-bulb, hot week, present-day file
+    summer  outdoor dry-bulb, every hour 1 May to 30 Sep, today and 2050
     scores  EnergyPlus score x10 for all 3,125 designs, in sweep idx order
             (g, u, ach_day, ach_night, screen_opacity; 5 levels each)
 """
@@ -47,6 +48,12 @@ def main(folder):
         "out": [round(v, 1) for v in climate["dry_bulb"]["future"][week]],
         "pre": [round(v, 1) for v in climate["dry_bulb"]["present"][week]],
         "scores": [round(d["score"] * 10) for d in grid],
+        # May to September, every hour, today and 2050: the site projection chart
+        "summer": {
+            "startDay": SUMMER[0],
+            "pre": [round(v, 1) for v in climate["dry_bulb"]["present"][SUMMER[0] * 24:SUMMER[1] * 24]],
+            "fut": [round(v, 1) for v in climate["dry_bulb"]["future"][SUMMER[0] * 24:SUMMER[1] * 24]],
+        },
     }
 
     passing = sum(1 for s in data["scores"] if s <= 420)
@@ -106,6 +113,7 @@ def main(folder):
     write_js("building.js", "BLD", building)
 
 
+SUMMER = (120, 273)  # day-of-year range: 1 May to 30 September
 OP_MIN = 12.0
 OP_STEP = 0.25
 

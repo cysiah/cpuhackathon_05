@@ -43,14 +43,6 @@
 
   // ---------- helpers ----------
   function font(c, px, w, fam) { c.font = `${w || 500} ${px}px ${fam || MONO}`; }
-  function star(c, x, y, r) {
-    c.beginPath();
-    for (let i = 0; i < 8; i++) {
-      const a = -Math.PI / 2 + i * Math.PI / 4, rr = i % 2 ? r * 0.26 : r;
-      c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
-    }
-    c.closePath(); c.fill();
-  }
   function arrow(c, x1, y1, x2, y2, s) {
     c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
     const a = Math.atan2(y2 - y1, x2 - x1);
@@ -60,131 +52,69 @@
     c.closePath(); c.fill();
   }
 
-  // ---------- HERO: Voyager-style arcs ----------
-  reg("c-hero", function (c, W, H, t, p) {
-    c.strokeStyle = C.k; c.fillStyle = C.k;
-    const pad = 4, baseY = H - 34, ox = pad;
-    const R = Math.min(W - 24, baseY - 56);
-    // ground
-    c.lineWidth = 1.2; c.setLineDash([]);
-    c.beginPath(); c.moveTo(0, baseY); c.lineTo(W, baseY); c.stroke();
-    const arcs = [
-      { n: "TODAY", v: "3 K·h", f: .30 },
-      { n: "PASS LIMIT", v: "42 K·h", f: .50, solid: true },
-      { n: "2050", v: "46.8 K·h", f: .66 },
-      { n: "2050 +2 °C", v: "83 K·h", f: .84 }
-    ];
-    const big = clamp(W / 26, 11, 16), small = clamp(W / 32, 10, 13);
-    arcs.forEach(a => {
-      const r = R * a.f;
-      c.lineWidth = a.solid ? 2 : 1.1;
-      c.setLineDash(a.solid ? [] : [5, 5]);
-      c.lineDashOffset = a.solid ? 0 : -t;  // marching dashes
-      c.beginPath(); c.arc(ox, baseY, r, -Math.PI / 2, 0); c.stroke();
-      c.setLineDash([]);
-      font(c, big, 800, DISP); c.fillText(a.n, ox, baseY - r - 26);
-      font(c, small, 400); c.fillText(a.v, ox, baseY - r - 10);
-    });
-    font(c, small, 400);
-    c.fillText("OUTDOOR AIR, OCCUPIED HOURS ABOVE 26 °C, HOT WEEK", ox, baseY + 22);
-
-    // atrium icon: glazed box with pitched glass roof, isometric
-    const s = R * 0.2, ax = ox + s * 0.55, ay = baseY;
-    const P = (x, y, z) => [ax + (x - y) * s * 0.62, ay - (x + y) * s * 0.3 - z * s];
-    c.lineWidth = 1.1;
-    const line = (a, b) => { c.beginPath(); c.moveTo(...a); c.lineTo(...b); c.stroke(); };
-    const corners = [[0, 0], [1, 0], [1, 1], [0, 1]];
-    corners.forEach((q, i) => {
-      const n = corners[(i + 1) % 4];
-      line(P(q[0], q[1], 0), P(n[0], n[1], 0));
-      line(P(q[0], q[1], 0.55), P(n[0], n[1], 0.55));
-      line(P(q[0], q[1], 0), P(q[0], q[1], 0.55));
-    });
-    // ridge along x at y=.5, z=.95 and glass grid
-    line(P(0, .5, .95), P(1, .5, .95));
-    for (let i = 0; i <= 6; i++) {
-      const x = i / 6;
-      line(P(x, 0, .55), P(x, .5, .95)); line(P(x, 1, .55), P(x, .5, .95));
-    }
-    line(P(0, 0, .55), P(0, .5, .95)); line(P(0, 1, .55), P(0, .5, .95));
-    for (let k = 1; k < 3; k++) {
-      const z = .55 + .4 * k / 3, yy = .5 * k / 3;
-      line(P(0, yy, z), P(1, yy, z)); line(P(0, 1 - yy, z), P(1, 1 - yy, z));
-    }
-    // ray from roof to the star
-    const start = P(1, .5, .95);
-    const ang = Math.PI / 4.1, Rs = R * 1.02;
-    const sx = ox + Math.cos(ang) * Rs, sy = baseY - Math.sin(ang) * Rs;
-    const reach = lerp(0.55, 1, p);
-    const ex = lerp(start[0], sx, reach), ey = lerp(start[1], sy, reach);
-    c.lineWidth = 1.3; line(start, [ex, ey]);
-    // pulse travelling out, 20-frame loop
-    const u = (t % 20) / 20 * reach;
-    c.beginPath(); c.arc(lerp(start[0], sx, u), lerp(start[1], sy, u), 3.5, 0, 7); c.fill();
-    // star (four-frame twinkle)
-    const tw = [1, 1.12, 1, .9][t % 4];
-    star(c, sx, sy, R * 0.065 * tw);
-    font(c, big, 800, DISP);
-    const lx = Math.min(sx + 12, W - c.measureText("HEADROOM").width - 2);
-    c.fillText("HEAT", lx, sy + R * 0.11);
-    c.fillText("HEADROOM", lx, sy + R * 0.11 + big * 1.05);
-    font(c, small, 400); c.fillText("SAFE UNTIL +? °C", lx, sy + R * 0.11 + big * 2.2);
-    // satellite = atrium baseline, beyond every arc
-    const sa = ang + 0.11, sr = R * 0.92 + Math.sin(t / 20 * Math.PI * 2) * 2;
-    const vx = ox + Math.cos(sa) * sr, vy = baseY - Math.sin(sa) * sr;
-    c.save(); c.translate(vx, vy); c.rotate(-0.6);
-    c.lineWidth = 1.1;
-    c.beginPath(); c.arc(0, 0, 7, 0, 7); c.stroke();
-    c.beginPath(); c.arc(0, 0, 2, 0, 7); c.fill();
-    c.strokeRect(9, -3, 26, 6); for (let i = 1; i < 6; i++) line([9 + i * 26 / 6, -3], [9 + i * 26 / 6, 3]);
-    line([-7, 0], [-26, 0]); line([0, -7], [-4, -24]);
-    c.restore();
-    font(c, big, 800, DISP); c.textAlign = "right";
-    c.fillText("ATRIUM BASELINE", vx - 14, vy - 30);
-    font(c, small, 400); c.fillText("320.6 K·h", vx - 14, vy - 14);
-    c.textAlign = "left";
-  });
-
-  // ---------- PROBLEM: 2,877-dot sphere ----------
+  // ---------- CONTEXT: a dotted globe, land in yellow ----------
   reg("c-sphere", function (c, W, H, t, p, S) {
-    const cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.34;
-    const a = t * 0.045 + p * 0.8, tilt = 0.38;
+    const cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.36;
+    // starts with the UK facing the viewer and turns east to west
+    const a = REDUCED ? 0 : -(t * 0.03 + p * 0.6), tilt = -0.42;  // north pole leans toward the viewer
     const ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(tilt), st = Math.sin(tilt);
-    // dotted orbit rings
-    c.strokeStyle = "rgba(241,241,234,.28)"; c.lineWidth = 1; c.setLineDash([1, 4]);
-    for (let k = 0; k < 3; k++) {
-      c.beginPath(); c.ellipse(cx, cy, R * (1.12 + k * .1), R * (0.35 + k * .2), -0.3 + k * 0.5, 0, 7); c.stroke();
-    }
+    const proj = q => {
+      const x = q[0] * ca + q[2] * sa, z0 = -q[0] * sa + q[2] * ca;
+      const y = q[1] * ct - z0 * st, z = q[1] * st + z0 * ct;
+      return [cx + x * R, cy + y * R, z];
+    };
+    c.strokeStyle = "rgba(241,241,234,.2)"; c.lineWidth = 1; c.setLineDash([1, 4]);
+    for (let k = 0; k < 2; k++) { c.beginPath(); c.ellipse(cx, cy, R * (1.16 + k * .12), R * (0.3 + k * .22), -0.32 + k * 0.6, 0, 7); c.stroke(); }
     c.setLineDash([]);
+    c.strokeStyle = "rgba(241,241,234,.25)"; c.beginPath(); c.arc(cx, cy, R, 0, 7); c.stroke();
     const pts = S.pts;
     for (let i = 0; i < pts.length; i++) {
-      const q = pts[i];
-      let x = q[0] * ca + q[2] * sa, z = -q[0] * sa + q[2] * ca, y = q[1];
-      const y2 = y * ct - z * st; z = y * st + z * ct; y = y2;
-      const d = (z + 1) / 2;
-      const px = cx + x * R, py = cy + y * R;
-      c.fillStyle = `rgba(241,241,234,${0.12 + d * 0.88})`;
-      const r = 0.5 + d * 1.5 * (q[3] ? 1.6 : 1);
-      c.beginPath(); c.arc(px, py, r, 0, 7); c.fill();
-      if (q[4] && z > -0.2) { // spikes
-        const L = q[4] * (0.6 + 0.4 * Math.sin(t * 0.9 + i));
-        c.strokeStyle = `rgba(241,241,234,${0.2 + d * 0.6})`;
-        c.beginPath(); c.moveTo(px, py); c.lineTo(cx + x * R * (1 + L), cy + y * R * (1 + L)); c.stroke();
-        c.beginPath(); c.arc(cx + x * R * (1 + L), cy + y * R * (1 + L), 1.4, 0, 7); c.fill();
-      }
+      const q = pts[i], [x, y, z] = proj(q);
+      if (z < 0) { if (q[3]) { c.fillStyle = "rgba(238,255,0,.08)"; c.fillRect(x - .5, y - .5, 1, 1); } continue; }
+      const d = 0.35 + z * 0.65;
+      if (q[3]) { c.fillStyle = `rgba(238,255,0,${d})`; c.beginPath(); c.arc(x, y, 0.6 + d * 1.3, 0, 7); c.fill(); }
+      else { c.fillStyle = `rgba(241,241,234,${0.06 + z * 0.12})`; c.fillRect(x - .6, y - .6, 1.2, 1.2); }
     }
-    c.fillStyle = C.y; c.beginPath(); c.arc(cx, cy, 3, 0, 7); c.fill();
-    font(c, 11, 400); c.fillStyle = C.dim;
-    c.fillText("N = 2,877", 8, H - 10);
-    c.textAlign = "right"; c.fillText("ENGLAND · MAY–JUN 2026", W - 8, H - 10); c.textAlign = "left";
+    // red pop-outs: each grows and falls back over 16 stepped frames
+    S.spikes.forEach((q, i) => {
+      const [x, y, z] = proj(q);
+      if (z < 0.15) return;
+      const f = REDUCED ? 0.5 : ((t + q[4]) % 16) / 16, L = q[5] * Math.sin(f * Math.PI);
+      const ex = cx + (x - cx) * (1 + L), ey = cy + (y - cy) * (1 + L);
+      c.strokeStyle = "rgba(255,59,47,.85)"; c.lineWidth = 1;
+      c.beginPath(); c.moveTo(x, y); c.lineTo(ex, ey); c.stroke();
+      c.fillStyle = "#FF3B2F"; c.beginPath(); c.arc(ex, ey, 1.6 + L * 6, 0, 7); c.fill();
+    });
+    // Manchester
+    const [mx, my, mz] = proj(S.man);
+    if (mz > 0) {
+      c.strokeStyle = C.y; c.lineWidth = 1.4;
+      c.beginPath(); c.arc(mx, my, 7, 0, 7); c.stroke();
+      c.beginPath(); c.moveTo(mx + 7, my - 7); c.lineTo(mx + 30, my - 30); c.lineTo(mx + 46, my - 30); c.stroke();
+      font(c, 11, 500); c.fillStyle = C.y; c.fillText("MANCHESTER 53.5°N", mx + 50, my - 26);
+    }
+    font(c, 10, 400); c.fillStyle = C.dim;
+    c.fillText("LAND · NATURAL EARTH 1:110M", 8, H - 10);
+    c.textAlign = "right"; c.fillText("RED: ILLUSTRATIVE HEAT EVENTS", W - 8, H - 10); c.textAlign = "left";
   }, function () {
-    const n = 2877, pts = [], g = Math.PI * (3 - Math.sqrt(5));
+    const land = (() => {
+      if (typeof LAND === "undefined") return () => 0;
+      const raw = atob(LAND.bits);
+      return (lat, lon) => {
+        const x = clamp(Math.floor(lon + 180), 0, LAND.w - 1), y = clamp(Math.floor(90 - lat), 0, LAND.h - 1), i = y * LAND.w + x;
+        return (raw.charCodeAt(i >> 3) >> (i & 7)) & 1;
+      };
+    })();
+    const v = (lat, lon) => { const la = lat * Math.PI / 180, lo = lon * Math.PI / 180; return [Math.cos(la) * Math.sin(lo), -Math.sin(la), Math.cos(la) * Math.cos(lo)]; };
+    const n = 7000, pts = [], g = Math.PI * (3 - Math.sqrt(5));
     let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
     for (let i = 0; i < n; i++) {
-      const y = 1 - (i / (n - 1)) * 2, r = Math.sqrt(1 - y * y), th = g * i;
-      pts.push([Math.cos(th) * r, y, Math.sin(th) * r, rnd() < .04 ? 1 : 0, rnd() < .03 ? 0.1 + rnd() * 0.35 : 0]);
+      const yy = 1 - (i / (n - 1)) * 2, lat = Math.asin(yy) * 180 / Math.PI;
+      const lon = ((g * i * 180 / Math.PI) % 360) - 180;
+      pts.push([...v(lat, lon), land(lat, lon)]);
     }
-    return { pts };
+    const spikes = pts.filter(q => q[3] && rnd() < 0.035).map(q => [q[0], q[1], q[2], 1, Math.floor(rnd() * 16), 0.08 + rnd() * 0.22]);
+    return { pts, spikes, man: v(53.48, -2.24) };
   });
 
   // ---------- BASELINE: hot week chart ----------
@@ -393,7 +323,7 @@
       c.fillText(lbl, clamp(base[0] + 12, 4, W - tw - 4), tall ? base[1] - 12 : H - 6);
     }
     if (!tall) {
-      font(c, 10, 400); c.fillStyle = C.dim;
+      font(c, 10, 400); c.fillStyle = "rgba(241,241,234,.75)";
       c.fillText("PASS ≤ 42 K·h: 1,041 OF 3,125", 4, 11);
       c.textAlign = "right"; c.fillText("DAY VENT 1 → 10 ACH  ·  NIGHT VENT 0 → 10  ·  SCREEN 0 → 0.9", W - 4, 11); c.textAlign = "left";
     }
@@ -413,10 +343,11 @@
       { n: "+2 °C", m: 2.4 }
     ];
     const NR = 9, NC = 27;
-    const A = Math.min(W * 0.5, H * 0.5);
-    const cx = W * 0.56;
-    const gap = lerp(H * 0.13, H * 0.2, p);
-    const baseY = H * 0.5 + gap * 1.5;
+    // the stack (three gaps plus one plane's depth) always fits inside the canvas
+    const A = Math.min(W * 0.48, H * 0.44);
+    const cx = W * 0.58;
+    const gap = Math.min(lerp(H * 0.12, H * 0.17, p), (H * 0.84 - A * 0.72) / 3);
+    const baseY = (H + 3 * gap + A * 0.72) / 2;
     const P = (u, v, y0) => [cx + (u - v) * A * 0.86, y0 + (u + v) * A * 0.36];
     c.strokeStyle = C.k; c.fillStyle = C.k;
     planes.forEach((pl, k) => {
@@ -436,11 +367,13 @@
         if (ok) c.fill(); else { c.lineWidth = .4; c.stroke(); }
       }
       const lp = P(-.5, .5, y0);
+      c.fillStyle = C.w;
       font(c, 12, 800, DISP); c.fillText(pl.n, 6, lp[1] - 6);
       font(c, 10, 400); c.fillText(pass + " / 243 PASS" + (pl.real ? " · E+" : " · TBC"), 6, lp[1] + 8);
+      c.fillStyle = C.k;
     });
     // brackets for the corners, like a section drawing
-    c.lineWidth = 1;
+    c.lineWidth = 1; c.strokeStyle = C.w; c.fillStyle = C.y;
     const tl = P(.5, -.5, baseY - 3 * gap - A * 0.36), bl = P(.5, -.5, baseY - A * 0.36);
     c.beginPath(); c.moveTo(tl[0], tl[1]); c.lineTo(bl[0], bl[1]); c.stroke();
     // designs falling out between planes, 20-frame loop
@@ -453,7 +386,7 @@
       c.fillRect(q[0] - 2.5, q[1] - 2.5, 5, 5);
       c.globalAlpha = 1;
     }
-    font(c, 10, 400);
+    font(c, 10, 400); c.fillStyle = C.dim;
     c.textAlign = "right"; c.fillText("ONE CELL = ONE DESIGN · FILLED = PASS ≤ 42 K·h", W - 4, H - 6); c.textAlign = "left";
   });
 
@@ -463,7 +396,8 @@
   // ---------- loop ----------
   let last = 0;
   function loop(now) {
-    if (now - last >= 1000 / FPS) { last = now; tick++; paintAll(); }
+    // figures marked still only redraw on scroll, resize or when their own script asks
+    if (now - last >= 1000 / FPS) { last = now; tick++; figs.forEach(f => f.vis && !f.still && paint(f)); }
     requestAnimationFrame(loop);
   }
   addEventListener("scroll", paintAll, { passive: true });

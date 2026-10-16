@@ -37,6 +37,12 @@
   const rampCss = name => "linear-gradient(90deg," + RAMPS[name].map(s => `rgb(${s[1]},${s[2]},${s[3]}) ${s[0] * 100}%`).join(",") + ")";
   const catName = i => B.cats[B.cat[i]].replace("_", " ").toUpperCase();
   const NF = B.cat.length;
+  // mean height of a face's corners, metres
+  const faceZ = i => {
+    let z = 0, n = 0;
+    for (let k = 0; k < 4; k++) { const v = B.f[i * 4 + k]; if (v >= 0) { z += B.v[v * 3 + 2]; n++; } }
+    return z / n;
+  };
 
   // per-study state shared by the viewer, readout and bar chart
   const state = { key: "hot_week", agg: [], hover: -1 };
@@ -58,7 +64,7 @@
     if (state.hover >= 0) {
       const i = state.hover;
       big = vals[i]; label = "SURFACE_" + String(i).padStart(4, "0");
-      sub = catName(i) + " · " + fmt(B.area[i], 1) + " m²";
+      sub = catName(i) + " · " + fmt(B.area[i], 1) + " m² · Z " + fmt(faceZ(i), 1) + " M";
     } else {
       const a = state.agg.find(x => x.cat === "atrium_roof");
       big = a ? a.kwh / a.area : 0; label = "ATRIUM_ROOF";
@@ -112,9 +118,13 @@
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.target.set(7.8, 3.7, 8);
     controls.enableDamping = true;
-    controls.autoRotate = !REDUCED;
     controls.autoRotateSpeed = 0.5;
-    controls.addEventListener("start", () => { controls.autoRotate = false; });
+    // turn slowly until someone drags; pause while the pointer is over the model
+    let dragged = false;
+    controls.autoRotate = !REDUCED;
+    controls.addEventListener("start", () => { dragged = true; controls.autoRotate = false; });
+    renderer.domElement.addEventListener("pointerenter", () => { controls.autoRotate = false; });
+    renderer.domElement.addEventListener("pointerleave", () => { controls.autoRotate = !REDUCED && !dragged; });
 
     // analysis mesh, one flat colour per face
     const pos = [], faceOf = [], edges = [];
@@ -155,12 +165,13 @@
     const a = B.north * Math.PI / 180;
     scene.add(new THREE.ArrowHelper(new THREE.Vector3(-Math.sin(a), Math.cos(a), 0), new THREE.Vector3(-60, -50, zmin + 0.5), 25, 0xeeff00, 7, 4));
 
-    // scan ring: steps up the building, 24-frame loop
+    // scan ring: rests at ground level and steps to the height of the hovered surface
     const pad = 3, ring = [[xmin - pad, ymin - pad], [xmax + pad, ymin - pad], [xmax + pad, ymax + pad], [xmin - pad, ymax + pad]];
     const sg = new THREE.BufferGeometry();
     sg.setAttribute("position", new THREE.Float32BufferAttribute(ring.flatMap(p => [p[0], p[1], 0]), 3));
     const scan = new THREE.LineLoop(sg, new THREE.LineBasicMaterial({ color: 0xeeff00 }));
-    scan.visible = !REDUCED;
+    scan.position.z = zmin;
+    let scanTarget = zmin;
     scene.add(scan);
 
     // hovered face outline
@@ -184,6 +195,7 @@
         p.needsUpdate = true;
       }
       hl.visible = fi >= 0;
+      if (fi >= 0) scanTarget = faceZ(fi);
       readout();
     }
     renderer.domElement.addEventListener("pointermove", pick);
@@ -202,7 +214,12 @@
     new IntersectionObserver(es => { visible = es[0].isIntersecting; if (visible) requestAnimationFrame(loop); }, { rootMargin: "100px" }).observe(el);
     function loop(now) {
       if (!visible) return;
-      if (now - last > 1000 / 12) { last = now; frame++; scan.position.z = lerp(zmin, zmax + 2, (frame % 24) / 23); }
+      if (now - last > 1000 / 12) {
+        last = now; frame++;
+        // move in stepped frames, at most a twelfth of the building height per frame
+        const dz = scanTarget - scan.position.z, stepZ = (zmax - zmin) / 12;
+        scan.position.z = REDUCED || Math.abs(dz) <= stepZ ? scanTarget : scan.position.z + Math.sign(dz) * stepZ;
+      }
       controls.update();
       renderer.render(scene, camera);
       requestAnimationFrame(loop);
@@ -222,7 +239,8 @@
 
   // ---------- solar energy by building element: segmented bars ----------
   const PINK = "#FF2E9A", BLUE = "#3230FF", PAPER = "#F1F1EA", DIM = "#6F7064";
-  const bars = H.reg("c-bars", function (c, W, Hh, t, p) {
+  // static: redrawn only when the study or the size changes
+  const bars = H.reg("c-bars", function (c, W, Hh) {
     const rows = state.agg, st = STUDIES[state.key];
     const n = rows.length, top = 8, rowH = (Hh - top - 30) / n;
     const lab = Math.min(150, W * 0.34), right = 78;
@@ -230,18 +248,16 @@
     const mn = Math.min(0, ...mwh), mx = Math.max(0, ...mwh);
     const x = v => lab + (W - lab - right) * (v - mn) / (mx - mn || 1);
     const seg = 7, gap = 2;
-    const fill = REDUCED ? 1 : clamp(lerp(0.35, 1, p / 0.7), 0, 1);
     font(c, 11, 400);
     rows.forEach((r, i) => {
       const y = top + i * rowH, bh = Math.max(6, rowH * 0.5), cy = y + (rowH - bh) / 2;
       const atr = r.cat.startsWith("atrium");
       c.fillStyle = atr ? PAPER : DIM;
       c.fillText(r.cat.replace("_", " ").toUpperCase(), 0, cy + bh - 1);
-      const x0 = x(0), x1 = x(mwh[i] * fill);
+      const x0 = x(0), x1 = x(mwh[i]);
       const dir = x1 >= x0 ? 1 : -1, len = Math.abs(x1 - x0), cnt = Math.floor(len / (seg + gap));
       c.fillStyle = atr ? PINK : BLUE;
       for (let k = 0; k < cnt; k++) {
-        if (k === cnt - 1 && atr && !REDUCED && t % 4 >= 2) continue;  // blinking last block on the atrium rows
         const sx = dir > 0 ? x0 + k * (seg + gap) : x0 - (k + 1) * (seg + gap) + gap;
         c.fillRect(sx, cy, seg, bh);
       }
@@ -255,5 +271,6 @@
     c.fillText(st.sym ? "MWh OVER THE PERIOD · − HARM  /  + BENEFIT" : "MWh OVER THE PERIOD", lab, Hh - 6);
   });
 
+  if (bars) bars.still = true;
   setStudy("hot_week");
 })();

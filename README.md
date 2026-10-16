@@ -1,6 +1,12 @@
 # Heat Headroom
 
-One-page presentation site for Forecast Factory X, Team 05 (Track 01).
+One-page presentation site for Forecast Factory x CPU Zoo, Team 05 (Track 01). This is a draft.
+
+## Page order
+
+Home · 01 Introduction · 02 Project context (the problem, projection at the site) · 03 Scope of study and adaptive reuse · 04 Our case · 05 How the tool works · 06 The starter app · 07 Design explorer · 08 Where the heat comes in · 09 Heat balance · 10 Why openness · 11 Trade-offs and honesty · 12 Why it wins.
+
+The "key finding" page (outdoor air fails the 2050 score) is archived in `archive/key-finding.html`.
 
 ## Run it
 
@@ -15,6 +21,9 @@ To publish it, turn on GitHub Pages for this repository (Settings › Pages › 
 | `index.html` | Page structure: one `<section>` per band, top to bottom |
 | `css/style.css` | All styling. Colour and type tokens are at the top |
 | `js/diagrams.js` | The canvas diagrams, one `reg("c-…")` block per diagram, plus the frame loop |
+| `js/pages.js` | Diagrams for the home, introduction, context, scope and openness pages |
+| `js/land.js` | Generated 1° land mask for the globe. Do not edit by hand |
+| `tools/build_landmask.py` | Rebuilds `js/land.js` from Natural Earth land (world-atlas `land-110m.json`) |
 | `js/building-view.js` | The building section: three.js model of envelope radiation, study switcher, readout and bars |
 | `js/explorer.js` | The design explorer: lever sliders, interpolation, measured error, proxies and the week chart |
 | `js/data.js` | Generated data the diagrams draw from. Do not edit by hand |
