@@ -5,7 +5,7 @@ Every guess the Floorplate Heat Map makes is listed here. The app shows the same
 **How to answer:** reply with the ID and your answer (e.g. `A04: 5F is at +17,500 mm, below the roof`).
 I'll update `app/data/assumptions.json`, mark the item answered, and change the code or data.
 
-Open: **29** of 29
+Open: **30** of 30
 
 
 ## Geometry
@@ -106,3 +106,4 @@ Open: **29** of 29
 | A27 | What the developer / estates lens measures | Floor area (m²) over the hotspot threshold and failing TM52, per intervention, plus cost and carbon where known. No rent, lettable-area or occupancy data. | **What does a developer or estates manager actually decide on? Usable or lettable area lost? Cost per m² fixed? Compliance? Do you have occupancy or rent figures per zone?** | open |
 | A28 | Score bands applied to single points | The atrium's PASS ≤ 42 / MARGINAL ≤ 150 / OVERHEATING ≤ 400 K·h bands are applied to each grid point's K·h to total floor area per band | **Is it fair to grade a point on the atrium's bands, or does the estates lens need a different test (e.g. TM52, or % of occupied hours above 26 °C)?** | open |
 | A29 | The Heat Ledger guide's numbers | The 7 scenarios and their scores (122, 35, 155, 192, 225, TM52 counts) come from the guide 'The heat ledger'. The Rhino session found that the files the guide cites (mechanisms.js, design_catalogue.json, TM52 outputs) are NOT in your 4_Atrium_Heat_Lab folder, so the guide may describe a newer version of the pack. | **Where did 'The heat ledger' come from (organisers, another team, a Miro board)? Until the Rhino session checks sweep.json, treat its scores and the frit / panel / TM52 figures as unverified.** | open |
+| A30 | No composite space score | Team decision: no overall quality grade per space; headline is overheating and its reduction vs existing. Hotspot view = count of flags. My reading of a garbled voice transcript. | **Is that right? Is 'cardio space' the atrium? Should the estates lens still rank interventions by floor area fixed?** | open |

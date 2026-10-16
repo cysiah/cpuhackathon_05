@@ -230,5 +230,13 @@
   "placeholder": "The 7 scenarios and their scores (122, 35, 155, 192, 225, TM52 counts) come from the guide 'The heat ledger'. The Rhino session found that the files the guide cites (mechanisms.js, design_catalogue.json, TM52 outputs) are NOT in your 4_Atrium_Heat_Lab folder, so the guide may describe a newer version of the pack.",
   "question": "Where did 'The heat ledger' come from (organisers, another team, a Miro board)? Until the Rhino session checks sweep.json, treat its scores and the frit / panel / TM52 figures as unverified.",
   "status": "open"
+ },
+ {
+  "id": "A30",
+  "group": "Brief",
+  "what": "No composite space score",
+  "placeholder": "Team decision: no overall quality grade per space; headline is overheating and its reduction vs existing. Hotspot view = count of flags. My reading of a garbled voice transcript.",
+  "question": "Is that right? Is 'cardio space' the atrium? Should the estates lens still rank interventions by floor area fixed?",
+  "status": "open"
  }
 ]

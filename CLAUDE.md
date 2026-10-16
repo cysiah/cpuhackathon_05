@@ -16,6 +16,14 @@ Deliverables:
 - The atrium EnergyPlus score (baseline 320.6 K·h) is a reference and calibration point, not the goal.
 - The goal is a whole-building diagnosis tool.
 
+## Team decisions (16 Oct, from the team discussion)
+
+- Two jobs in one tool: (1) evaluate the **existing** condition on GF and the top floor (5F); (2) check **proposed interventions** against that benchmark ("how far, how good are we doing").
+- The headline is **overheating and how much the proposal lowers it**, not a quality score per space.
+- **No composite space score or class.** Too many factors (material, glazing ratio...). Show layers side by side; a hotspot view is a *count of flags*, never a grade.
+- The tool is **open-ended**: new parameters and data can be added later. Prefer data-driven layers over hard-coded ones.
+- The two lenses (architect vs developer / estates manager) care about different things. Spots and areas, not rooms.
+
 ## Current direction (being explored)
 
 Floor-plan heatmaps on **isolated GF and 5F floorplates** (not the single atrium box). The areas will later be classified as **enclosed, open or void**. Parameter layers you can cross-reference:
