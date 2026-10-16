@@ -10,62 +10,88 @@
   const PAPER = "#F1F1EA", PINK = "#FF2E9A", CYAN = "#4FE3FF", RED = "#FF3B2F", BLUE = "#3D5BFF", LILAC = "#FF8FD0";
   const seeded = s => () => (s = (s * 16807) % 2147483647) / 2147483647;
 
-  // ---------- HOME: the design space as white linework ----------
-  // Every design is a point: its direction comes from its levers, its distance
-  // from the centre from its score, so the worst designs make the longest spikes.
-  // Lines fan from 25 outer apexes (g-value × roof screen) and 25 inner hubs
-  // (day × night ventilation) to their 125 designs each.
-  const S = typeof SWEEP !== "undefined" ? SWEEP : null;
-  if (S) reg("c-lines", function (c, W, Hh, t, p, st) {
-    if (!st.pts) linesBuild(st);
-    const wide = W > 760, cx = W * (wide ? 0.66 : 0.5), cy = Hh * 0.5, R = Math.min(W * (wide ? 0.22 : 0.26), Hh * 0.32);
-    const a = REDUCED ? 0.6 : 0.6 + t * 0.012 + p * 0.5, ca = Math.cos(a), sa = Math.sin(a);
-    const tl = -0.35, ct = Math.cos(tl), stl = Math.sin(tl);
-    const proj = q => {
-      const x = q[0] * ca + q[2] * sa, z0 = -q[0] * sa + q[2] * ca;
-      const y = q[1] * ct - z0 * stl, z = q[1] * stl + z0 * ct;
-      const k = 3 / (3 - z);  // gentle perspective
-      return [cx + x * R * k, cy + y * R * k];
+  // ---------- HOME: Geoffrey Manton as white linework ----------
+  // The envelope mesh from the starter model (js/building.js, Rhino metres, Z up),
+  // drawn as an axonometric wireframe, with fans of lines from 24 points around it
+  // converging on its surfaces, and the neighbouring blocks faint behind.
+  // js/building.js loads after this file, so everything is built on first draw.
+  reg("c-lines", function (c, W, Hh, t, p, st) {
+    if (typeof BLD === "undefined") return;
+    if (!st.v) gmBuild(st);
+    const wide = W > 760, cx = W * (wide ? 0.64 : 0.5), cy = Hh * (wide ? 0.54 : 0.58);
+    const sc = Math.min(W * (wide ? 0.009 : 0.0098), Hh * 0.011);  // px per metre
+    const a = REDUCED ? -0.75 : -0.75 + t * 0.008 + p * 0.4, ca = Math.cos(a), sa = Math.sin(a);
+    // axonometric: turn about the vertical axis, then tilt the plan
+    const P = (x, y, z) => {
+      const X = x - st.c[0], Y = y - st.c[1], Z = z - st.c[2];
+      const u = X * ca - Y * sa, d = X * sa + Y * ca;
+      return [cx + u * sc, cy + (d * 0.62 - Z * 0.8) * sc];
     };
-    const P = st.pts.map(proj), A = st.apex.map(proj), Hb = st.hub.map(proj);
-    c.strokeStyle = "#F1F1EA"; c.lineWidth = 0.5;
-    c.globalAlpha = 0.16; c.beginPath();
-    st.pts.forEach((q, i) => { const o = A[q[3]], d = P[i]; c.moveTo(o[0], o[1]); c.lineTo(d[0], d[1]); });
+    const V = st.v, n = V.length / 3, S2 = new Float32Array(n * 2);
+    for (let i = 0; i < n; i++) { const q = P(V[i * 3], V[i * 3 + 1], V[i * 3 + 2]); S2[i * 2] = q[0]; S2[i * 2 + 1] = q[1]; }
+    const seg = (list, alpha, lw) => {
+      c.globalAlpha = alpha; c.lineWidth = lw; c.beginPath();
+      for (let k = 0; k < list.length; k += 2) { const i = list[k], j = list[k + 1]; c.moveTo(S2[i * 2], S2[i * 2 + 1]); c.lineTo(S2[j * 2], S2[j * 2 + 1]); }
+      c.stroke();
+    };
+    c.strokeStyle = "#F1F1EA";
+    seg(st.ctx, 0.08, 0.5);
+    // fans
+    c.globalAlpha = 0.07; c.lineWidth = 0.5; c.beginPath();
+    st.apex.forEach((ap, k) => {
+      const o = P(ap[0], ap[1], ap[2]);
+      st.fan[k].forEach(i => { c.moveTo(o[0], o[1]); c.lineTo(S2[i * 2], S2[i * 2 + 1]); });
+    });
     c.stroke();
-    c.globalAlpha = 0.09; c.beginPath();
-    st.pts.forEach((q, i) => { const o = Hb[q[4]], d = P[i]; c.moveTo(o[0], o[1]); c.lineTo(d[0], d[1]); });
-    c.stroke();
+    seg(st.mesh, 0.38, 0.5);
     c.globalAlpha = 1; c.fillStyle = "#F1F1EA";
-    A.forEach(o => { c.beginPath(); c.arc(o[0], o[1], 1.4, 0, 7); c.fill(); });
-    // a single long stray line, as in a drawing left mid-stroke
-    const s0 = A[st.stray];
-    c.globalAlpha = 0.6; c.beginPath(); c.moveTo(s0[0], s0[1]); c.lineTo(s0[0] - R * 0.9, s0[1] - R * 0.25); c.stroke();
+    st.apex.forEach(ap => { const o = P(ap[0], ap[1], ap[2]); c.fillRect(o[0] - 1, o[1] - 1, 2, 2); });
+    // one long stray line, as in a drawing left mid-stroke
+    const s0 = P(...st.apex[st.stray]);
+    c.globalAlpha = 0.6; c.lineWidth = 0.6; c.beginPath(); c.moveTo(s0[0], s0[1]); c.lineTo(s0[0] - 60 * sc, s0[1] - 14 * sc); c.stroke();
     c.globalAlpha = 1;
   });
 
-  function linesBuild(st) {
-    const N = S.score.length, rnd = seeded(31), lmax = Math.log(Math.max(...S.score));
-    const dir = (th, ph) => [Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th)];
-    const pts = [];
-    const groupA = Array.from({ length: 25 }, () => [0, 0, 0, 0]);
-    for (let i = 0; i < N; i++) {
-      const g = Math.floor(i / 625) % 5, d = Math.floor(i / 25) % 5, n = Math.floor(i / 5) % 5, s = i % 5;
-      const th = ((g * 5 + s) + rnd() * 0.9) / 25 * 2 * Math.PI;
-      const ph = 0.25 + ((d * 5 + n) + rnd() * 0.9) / 25 * (Math.PI - 0.5);
-      const r = 0.3 + 0.7 * Math.log(Math.max(1, S.score[i])) / lmax + (rnd() - .5) * 0.08;
-      const v = dir(th, ph);
-      const q = [v[0] * r, v[1] * r, v[2] * r, g * 5 + s, d * 5 + n];
-      pts.push(q);
-      const ga = groupA[q[3]]; ga[0] += q[0]; ga[1] += q[1]; ga[2] += q[2]; ga[3]++;
+  function gmBuild(st) {
+    const B = BLD, rnd = seeded(31);
+    const v = B.v.slice(), nb = v.length / 3;
+    // centre on the envelope's bounding box
+    const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < nb; i++) for (let k = 0; k < 3; k++) { lo[k] = Math.min(lo[k], v[i * 3 + k]); hi[k] = Math.max(hi[k], v[i * 3 + k]); }
+    const ctr = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2];
+    // envelope: every face outline
+    const mesh = [];
+    for (let f = 0; f < B.f.length / 4; f++) {
+      const q = B.f.slice(f * 4, f * 4 + 4).filter(x => x >= 0);
+      q.forEach((x, k) => mesh.push(x, q[(k + 1) % q.length]));
     }
-    // apexes sit outside their fan, pushed out by a random spike length
-    const apex = groupA.map(ga => {
-      const m = [ga[0] / ga[3], ga[1] / ga[3], ga[2] / ga[3]], L = Math.hypot(...m) || 1, k = (1.05 + rnd() * 0.6) / L;
-      return [m[0] * k + (rnd() - .5) * 0.3, m[1] * k + (rnd() - .5) * 0.3, m[2] * k + (rnd() - .5) * 0.3];
-    });
-    const hub = Array.from({ length: 25 }, () => { const v = dir(rnd() * 2 * Math.PI, 0.4 + rnd() * 2.3), r = 0.15 + rnd() * 0.25; return [v[0] * r, v[1] * r, v[2] * r]; });
-    Object.assign(st, { pts, apex, hub, stray: Math.floor(rnd() * 25) });
+    // context: triangle edges within 75 m of the building, appended after the envelope vertices
+    const ctx = [], cv = B.ctx.v, ct = B.ctx.t, keep = new Map();
+    const near = i => Math.hypot(cv[i * 3] - ctr[0], cv[i * 3 + 1] - ctr[1]) < 62;
+    const idx = i => { if (!keep.has(i)) { keep.set(i, v.length / 3); v.push(cv[i * 3], cv[i * 3 + 1], cv[i * 3 + 2]); } return keep.get(i); };
+    const seen = new Set();
+    for (let k = 0; k < ct.length; k += 3) {
+      const tri = [ct[k], ct[k + 1], ct[k + 2]];
+      if (!tri.every(near)) continue;
+      for (let e = 0; e < 3; e++) {
+        const i = tri[e], j = tri[(e + 1) % 3], key = i < j ? i + "," + j : j + "," + i;
+        if (seen.has(key)) continue;
+        seen.add(key); ctx.push(idx(i), idx(j));
+      }
+    }
+    // 24 apexes around and above the building, each fanning to 150 envelope points
+    const apex = [], fan = [];
+    for (let k = 0; k < 24; k++) {
+      const th = rnd() * 2 * Math.PI, r = 34 + rnd() * 22;
+      apex.push([ctr[0] + Math.cos(th) * r, ctr[1] + Math.sin(th) * r, ctr[2] + (rnd() - 0.2) * 45]);
+      const pick = [];
+      for (let m = 0; m < 150; m++) pick.push(Math.floor(rnd() * nb));
+      fan.push(pick);
+    }
+    Object.assign(st, { v, c: ctr, mesh, ctx, apex, fan, stray: Math.floor(rnd() * 24) });
   }
+
+  const S = typeof SWEEP !== "undefined" ? SWEEP : null;
 
   // ---------- INTRO: one day in the atrium, an hour per step ----------
   if (typeof FF !== "undefined") reg("c-day", function (c, W, Hh, t) {
