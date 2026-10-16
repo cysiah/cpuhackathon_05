@@ -51,4 +51,18 @@ const idx = floors[up].zone.findIndex((z) => z !== FM.ZONE.VOID);
 assert.ok(r1[up].kh[idx] > r0[up].kh[idx], "stratification warms " + up);
 assert.strictEqual(r1[meta.floors[0]].kh[0].toFixed(6), r0[meta.floors[0]].kh[0].toFixed(6));
 
+// grade: in range, void null, better scenarios grade better, weights respond
+const gm = (res, fid) => { const v = res[fid].grade.filter((x) => x !== null); return v.reduce((a, b) => a + b, 0) / v.length; };
+const gBase = FM.computeAll(floors, scen[0], meta, {});
+const gBest = FM.computeAll(floors, scen.find((s) => s.id === "screen90"), meta, {});
+meta.floors.forEach((fid) => {
+  gBase[fid].grade.forEach((g, i) => { if (g !== null) assert.ok(g >= 0 && g <= 100, "grade range"); else assert.strictEqual(floors[fid].zone[i], FM.ZONE.VOID); });
+  assert.ok(gm(gBest, fid) < gm(gBase, fid), fid + ": screen90 grades better than baseline");
+});
+const off = JSON.parse(JSON.stringify(FM.GRADE_DEFAULTS)); Object.keys(off.layers).forEach((k) => (off.layers[k].on = false));
+const none = FM.computeAll(floors, scen[0], meta, { grade: off });
+assert.strictEqual(gm(none, meta.floors[0]), 0, "no layers on gives grade 0");
+const dfOn = JSON.parse(JSON.stringify(FM.GRADE_DEFAULTS)); dfOn.layers.df.on = true;
+assert.notStrictEqual(gm(FM.computeAll(floors, scen[0], meta, { grade: dfOn }), meta.floors[0]).toFixed(3), gm(gBase, meta.floors[0]).toFixed(3), "adding daylight changes the grade");
+
 console.log("model tests passed");

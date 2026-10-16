@@ -28,13 +28,14 @@
     },
     estates: {
       question: "Which parts of GF and 5F fail, how much floor area is that, and which intervention fixes the most for the money?",
-      mode: "hotspot", a: "kh", b: "df", showScatter: false, showRank: true
+      mode: "grade", a: "kh", b: "df", showScatter: false, showRank: true
     }
   };
 
   var S = {
     meta: null, scenarios: [], floors: {}, assumptions: [],
-    res: null, cmp: null, selected: null, view: {}, lens: "architect", rankKey: null, rankRows: null
+    res: null, cmp: null, selected: null, view: {}, lens: "architect", rankKey: null, rankRows: null,
+    grade: JSON.parse(JSON.stringify(FM.GRADE_DEFAULTS))
   };
 
   function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
@@ -65,7 +66,8 @@
       enclosedOffsetK: +$("encOff").value,
       calibrate: $("calibrate").checked,
       hotKh: +$("hotKh").value,
-      darkDf: +$("darkDf").value
+      darkDf: +$("darkDf").value,
+      grade: S.grade
     };
   }
   function mode() { return document.querySelector("input[name=mode]:checked").value; }
@@ -92,6 +94,7 @@
     if (m === "bivariate") return [r[a][i], r[b][i]];
     if (m === "hotspot") return FM.hotspot(r, i, params());
     if (m === "delta") return S.cmp ? r[a][i] - S.cmp[fid][a][i] : null;
+    if (m === "grade") return r.grade[i];
   }
 
   function scales() {
@@ -119,6 +122,7 @@
     }
     if (m === "bivariate") return BIV[FM.classOf(v[1], sc.cutsB)][FM.classOf(v[0], sc.cutsA)];
     if (m === "hotspot") return HOT[v.count];
+    if (m === "grade") return BAND_COLORS[FM.gradeClass(v, S.grade)];
     if (m === "delta") {
       if (v === null) return css("--line");
       var worse = L.better === "higher" ? -v : v;
@@ -247,7 +251,7 @@
       });
       var hs = FM.hotspot(r, i, params());
       var on = Object.keys(hs.flags).filter(function (k) { return hs.flags[k]; });
-      html += "</table>Hotspot flags: " + (on.length ? on.join(", ") : "none");
+      html += "</table>Grade class: <b>" + FM.GRADE_CLASSES[FM.gradeClass(r.grade[i], S.grade)] + "</b>. Hotspot flags: " + (on.length ? on.join(", ") : "none");
     }
     tip.innerHTML = html;
     tip.hidden = false;
@@ -277,6 +281,13 @@
       HOT.forEach(function (c, i) { s += "<span class='sw' style='background:" + c + "'></span>" + i; });
       host.innerHTML = s + "</span><span>Number of flags per point: overheating &gt; " + p.hotKh + " K·h, TM52 fails ≥ 2 criteria, daylight &lt; " +
         p.darkDf + "%, sun &gt; " + FM.DEFAULT_PARAMS.sunnyH + " h. Hover for which ones. <span class='tag a'>A22</span></span>";
+    } else if (m === "grade") {
+      var on = Object.keys(S.grade.layers).filter(function (k) { return S.grade.layers[k].on && S.grade.layers[k].w > 0 && FM.LAYERS[k]; });
+      var sw = "<span class='swatches'>";
+      FM.GRADE_CLASSES.forEach(function (n, i) { sw += "<span class='sw' style='background:" + BAND_COLORS[i] + "'></span>" + n; });
+      host.innerHTML = sw + "</span><span>Grade 0-100 (lower is better). Good ≤ " + S.grade.cuts[0] + ", Fair ≤ " + S.grade.cuts[1] + ", Poor ≤ " + S.grade.cuts[2] +
+        ". Built from: " + (on.length ? on.map(function (k) { return FM.LAYERS[k].label + " ×" + S.grade.layers[k].w; }).join(", ") : "<b>nothing ticked</b>") +
+        " <span class='tag a'>A30</span></span>";
     } else {
       host.innerHTML = S.cmp
         ? "<span><b>Change in " + LA.label + "</b> (" + LA.unit + "): this scenario minus “" + scenById($("compare").value).name + "”</span>" +
@@ -408,11 +419,9 @@
 
   function zoneShownName(z) { return z === "enclosed" ? $("zEnclosed").checked : z === "open" ? $("zOpen").checked : false; }
 
-  var BANDS = [42, 150, 400];   // official score bands applied per point (A28)
-  var BAND_NAMES = ["Pass", "Marginal", "Overheating", "Beyond"];
-  var BAND_COLORS = ["#2E7D4F", "#E0A526", "#D65A31", "#7A1E1E"];
+  var BAND_COLORS = ["#2E7D4F", "#E0A526", "#D65A31", "#7A1E1E"];   // Good / Fair / Poor / Critical
 
-  /* Floor area in each score band, per scenario, for the estates lens. */
+  /* Floor area in each grade class, per scenario, for the estates lens. */
   function rankRows() {
     var p = params(), zk = [$("zEnclosed").checked, $("zOpen").checked].join();
     var key = JSON.stringify(p) + zk;
@@ -422,10 +431,9 @@
       S.meta.floors.forEach(function (fid) {
         var f = S.floors[fid], r = res[fid], cell = Math.pow(f.grid_mm / 1000, 2);
         for (var i = 0; i < f.x.length; i++) {
-          if (r.kh[i] === null || !zoneShown(f.zone[i])) continue;
-          var k = r.kh[i];
-          band[k <= BANDS[0] ? 0 : k <= BANDS[1] ? 1 : k <= BANDS[2] ? 2 : 3] += cell;
-          area += cell; wsum += k * cell;
+          if (r.grade[i] === null || r.kh[i] === null || !zoneShown(f.zone[i])) continue;
+          band[FM.gradeClass(r.grade[i], S.grade)] += cell;
+          area += cell; wsum += r.grade[i] * cell;
         }
       });
       return { s: s, band: band, area: area, mean: area ? wsum / area : 0 };
@@ -435,28 +443,53 @@
   }
 
   function drawRanking() {
-    var all = rankRows(), base = all[0], cur = $("scenario").value, rows = all.slice();
+    var all = rankRows(), base = all[0], cur = $("scenario").value, rows = all.slice(), CN = FM.GRADE_CLASSES;
     rows.sort(function (a, b) { return b.band[0] - a.band[0] || a.mean - b.mean; });
-    var html = "<tr><th>Intervention</th><th>Rung</th><th class='n'>Atrium K·h</th><th>Floor area by band</th>" +
-      "<th class='n'>Passing</th><th class='n'>Gained vs existing</th><th class='n'>Cost</th><th class='n'>Carbon</th></tr>";
+    var html = "<tr><th>Intervention</th><th>Rung</th><th class='n'>Atrium K·h</th><th>Floor area by grade</th>" +
+      "<th class='n'>Mean grade</th><th class='n'>Good floor gained</th><th class='n'>Cost</th><th class='n'>Carbon</th></tr>";
     var cell = function (e, unit) { return !e || e.value === null ? "<span class='tag need'>needs input</span>" : e.value.toLocaleString() + " " + unit; };
     rows.forEach(function (r) {
       var bar = "<div style='display:flex;height:12px;width:220px;border-radius:3px;overflow:hidden;border:1px solid var(--line)'>";
       r.band.forEach(function (m, i) {
-        bar += "<span title='" + BAND_NAMES[i] + ": " + Math.round(m) + " m²' style='width:" + (r.area ? 100 * m / r.area : 0) + "%;background:" + BAND_COLORS[i] + "'></span>";
+        bar += "<span title='" + CN[i] + ": " + Math.round(m) + " m²' style='width:" + (r.area ? 100 * m / r.area : 0) + "%;background:" + BAND_COLORS[i] + "'></span>";
       });
       bar += "</div><div style='font-size:11.5px;color:var(--muted);margin-top:2px'>" +
-        r.band.map(function (m, i) { return Math.round(m) + " " + BAND_NAMES[i].toLowerCase(); }).join(" · ") + "</div>";
+        r.band.map(function (m, i) { return Math.round(m) + " " + CN[i].toLowerCase(); }).join(" · ") + "</div>";
       var gain = r.band[0] - base.band[0];
       html += "<tr class='rk" + (r.s.id === cur ? " cur" : "") + "' data-id='" + r.s.id + "'><td>" + r.s.name + "</td><td>" + RUNGS[r.s.rung] +
         "</td><td class='n'>" + r.s.atrium_score_kh + " <span class='tag " + (r.s.score_source === "EnergyPlus" ? "sim" : "prx") + "'>" + r.s.score_source + "</span></td>" +
-        "<td>" + bar + "</td><td class='n'>" + Math.round(r.band[0]) + " m²</td><td class='n'>" + (gain > 0 ? "+" + Math.round(gain) + " m²" : "–") + "</td>" +
+        "<td>" + bar + "</td><td class='n'>" + Math.round(r.mean) + " / 100</td><td class='n'>" + (gain > 0 ? "+" + Math.round(gain) + " m²" : "–") + "</td>" +
         "<td class='n'>" + cell(r.s.ledger.cost_gbp, "£") + "</td><td class='n'>" + cell(r.s.ledger.embodied_tco2e, "tCO₂e") + "</td></tr>";
     });
     $("rankTable").innerHTML = html;
-    $("rankSub").textContent = "most floor passing first";
+    $("rankSub").textContent = "most good floor first, using your grade";
     document.querySelectorAll("#rankTable tr.rk").forEach(function (tr) {
       tr.addEventListener("click", function () { $("scenario").value = tr.getAttribute("data-id"); recompute(); });
+    });
+  }
+
+  /* Grade controls: one row per layer, so new layers appear without code changes. */
+  function buildGradeRows() {
+    var host = $("gradeRows"), html = "<span class='hd'></span><span class='hd'>Layer</span><span class='hd'>Weight</span><span class='hd'>Good</span><span class='hd'>Bad</span>";
+    Object.keys(S.grade.layers).forEach(function (k) {
+      var g = S.grade.layers[k], L = FM.LAYERS[k];
+      if (!L) return;
+      html += "<input type='checkbox' data-k='" + k + "' data-f='on' aria-label='Count " + L.label + "'" + (g.on ? " checked" : "") + ">" +
+        "<label title='" + L.unit + "'>" + L.label + "</label>" +
+        "<input type='number' step='0.5' min='0' max='9' data-k='" + k + "' data-f='w' value='" + g.w + "' aria-label='" + L.label + " weight'>" +
+        "<input type='number' step='any' data-k='" + k + "' data-f='good' value='" + g.good + "' aria-label='" + L.label + " good limit'>" +
+        "<input type='number' step='any' data-k='" + k + "' data-f='bad' value='" + g.bad + "' aria-label='" + L.label + " bad limit'>";
+    });
+    host.innerHTML = html;
+    host.querySelectorAll("input").forEach(function (el) {
+      el.addEventListener("input", function () {
+        var g = S.grade.layers[el.getAttribute("data-k")], f = el.getAttribute("data-f");
+        g[f] = f === "on" ? el.checked : +el.value;
+        recompute();
+      });
+    });
+    [0, 1, 2].forEach(function (i) {
+      $("cut" + i).addEventListener("input", function () { S.grade.cuts[i] = +$("cut" + i).value; recompute(); });
     });
   }
 
@@ -545,6 +578,7 @@
           });
         });
         wireScatter();
+        buildGradeRows();
         document.querySelectorAll("input[name=lens]").forEach(function (el) {
           el.addEventListener("change", function () { if (el.checked) setLens(el.value); });
         });

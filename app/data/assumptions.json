@@ -218,10 +218,10 @@
  {
   "id": "A28",
   "group": "Brief",
-  "what": "Score bands applied to single points",
-  "placeholder": "The atrium's PASS ≤ 42 / MARGINAL ≤ 150 / OVERHEATING ≤ 400 K·h bands are applied to each grid point's K·h to total floor area per band",
+  "what": "Score bands applied to single points (superseded)",
+  "placeholder": "Replaced by the grade classes (A30). The estates ranking now groups floor area by grade class, not by the atrium's PASS / MARGINAL / OVERHEATING bands.",
   "question": "Is it fair to grade a point on the atrium's bands, or does the estates lens need a different test (e.g. TM52, or % of occupied hours above 26 °C)?",
-  "status": "open"
+  "status": "answered"
  },
  {
   "id": "A29",
@@ -234,9 +234,9 @@
  {
   "id": "A30",
   "group": "Brief",
-  "what": "No composite space score",
-  "placeholder": "Team decision: no overall quality grade per space; headline is overheating and its reduction vs existing. Hotspot view = count of flags. My reading of a garbled voice transcript.",
-  "question": "Is that right? Is 'cardio space' the atrium? Should the estates lens still rank interventions by floor area fixed?",
+  "what": "Composite grade / class for spots",
+  "placeholder": "Team decision (corrected): there IS a grade, built from whichever parameters the user switches on, with editable weights and good/bad limits. Defaults: overheating K·h (weight 3) + TM52 fails (weight 1) on; daylight etc. off. Classes Good / Fair / Poor / Critical at 15 / 40 / 70 out of 100.",
+  "question": "Which parameters should count by default for each lens? What weights? What counts as 'good' and 'bad' for each (limits)? Should the class names be A-D, or Good-Critical?",
   "status": "open"
  }
 ]

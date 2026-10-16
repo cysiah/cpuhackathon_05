@@ -81,3 +81,9 @@ select:focus-visible, input:focus-visible { outline: 3px solid var(--blue); outl
 #rankTable tr.rk:hover td { background: var(--bg); }
 #rankTable tr.cur td { background: var(--flag); }
 #rankTable .bar { display: inline-block; height: 8px; border-radius: 2px; background: var(--accent); vertical-align: middle; margin-right: 6px; }
+
+.grows { display: grid; grid-template-columns: auto 1fr 44px 52px 52px; gap: 4px 6px; align-items: center; font-size: 12.5px; margin-bottom: 10px; }
+.grows .hd { color: var(--muted); font-weight: 600; font-size: 11px; }
+.grows input[type=number], .cuts input { width: 100%; font: inherit; padding: 3px 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--ink); font-variant-numeric: tabular-nums; }
+.cuts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 4px; }
+.grows label { margin: 0; font-weight: 400; }

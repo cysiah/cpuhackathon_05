@@ -41,6 +41,7 @@
         <label><input type="radio" name="mode" value="bivariate"> Two layers</label>
         <label><input type="radio" name="mode" value="hotspot"> Hotspots</label>
         <label><input type="radio" name="mode" value="delta"> Change</label>
+        <label><input type="radio" name="mode" value="grade"> Grade</label>
       </div>
       <label>Layer A <select id="layerA"></select></label>
       <label id="layerBWrap">Layer B <select id="layerB"></select></label>
@@ -51,6 +52,14 @@
       <label class="check"><input type="checkbox" id="zEnclosed" checked> Enclosed</label>
       <label class="check"><input type="checkbox" id="zOpen" checked> Open</label>
       <p class="hint">Voids have no floor and are always hatched.</p>
+    </section>
+
+    <section id="gradeBox">
+      <h2>Grade: what counts <span class="tag a">A30</span></h2>
+      <div id="gradeRows" class="grows"></div>
+      <label>Class limits (Good / Fair / Poor), out of 100
+        <span class="cuts"><input type="number" id="cut0" value="15" min="0" max="100"><input type="number" id="cut1" value="40" min="0" max="100"><input type="number" id="cut2" value="70" min="0" max="100"></span></label>
+      <p class="hint">Each ticked layer scores 0 at its “good” limit and 100 at its “bad” limit; the grade is the weighted average. The limits are placeholders for you to set.</p>
     </section>
 
     <section>
@@ -91,7 +100,7 @@
     <section class="card wide" id="rankCard" hidden>
       <h2>Which intervention fixes the most floor? <span class="sub" id="rankSub"></span></h2>
       <div class="scroll"><table id="rankTable"></table></div>
-      <p class="hint">Each grid point is placed in the official score bands (pass ≤ 42, marginal ≤ 150, overheating ≤ 400 K·h) and its area added up, over the zones ticked on the left. Applying the atrium bands to single points is my assumption (A28). Click a row to show it on the plans. Cost and carbon stay “needs input” until the rates are sourced (A24).</p>
+      <p class="hint">Each grid point gets the grade you set on the left (which layers count, their weights and limits), and its area is added up per class over the zones ticked on the left. Click a row to show it on the plans. Cost and carbon stay “needs input” until the rates are sourced (A24).</p>
     </section>
 
     <section class="card wide">

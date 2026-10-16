@@ -20,8 +20,26 @@
     dmrt:   { label: "Mean solar MRT rise", unit: "K", source: "estimate (SolarCal)", better: "lower", dp: 1 },
     sun_h:  { label: "Sun hours (hot week)", unit: "h", source: "Ladybug", better: "lower", dp: 0 },
     rad:    { label: "Transmitted solar", unit: "kWh/m²", source: "Ladybug, scaled per scenario", better: "lower", dp: 1 },
-    df:     { label: "Daylight factor", unit: "%", source: "proxy", better: "higher", dp: 1 }
+    df:     { label: "Daylight factor", unit: "%", source: "proxy", better: "higher", dp: 1 },
+    grade:  { label: "Overall grade (0 best, 100 worst)", unit: "/100", source: "derived from the layers you switch on", better: "lower", dp: 0 }
   };
+
+  /* Open-ended grade (A30). Each ticked layer scores 0 at "good" and 100 at "bad" (linear, clamped);
+   * the grade is the weighted mean. Direction comes from good vs bad, so "higher is better"
+   * layers just have good > bad. New layers can be added here or in the data. */
+  var GRADE_DEFAULTS = {
+    layers: {
+      kh:    { on: true,  w: 3, good: 42, bad: 300 },
+      tm52:  { on: true,  w: 1, good: 0,  bad: 3 },
+      peak:  { on: false, w: 1, good: 28, bad: 36 },
+      dmrt:  { on: false, w: 1, good: 0,  bad: 8 },
+      sun_h: { on: false, w: 1, good: 0,  bad: 40 },
+      rad:   { on: false, w: 1, good: 0,  bad: 6 },
+      df:    { on: false, w: 1, good: 5,  bad: 1 }
+    },
+    cuts: [15, 40, 70]
+  };
+  var GRADE_CLASSES = ["Good", "Fair", "Poor", "Critical"];
 
   var DEFAULT_PARAMS = {
     threshold: 26,          // official comfort threshold, °C operative
@@ -34,6 +52,25 @@
     darkDf: 2,              // %
     sunnyH: 20
   };
+
+  function gradeScore(out, i, grade) {
+    var sum = 0, wsum = 0, parts = {};
+    for (var k in grade.layers) {
+      var g = grade.layers[k];
+      if (!g.on || !g.w || !out[k] || out[k][i] === null || out[k][i] === undefined) continue;
+      var b = g.good === g.bad ? 0 : (out[k][i] - g.good) / (g.bad - g.good);
+      b = Math.max(0, Math.min(1, b));
+      parts[k] = b;
+      sum += g.w * b;
+      wsum += g.w;
+    }
+    return { score: wsum ? 100 * sum / wsum : 0, parts: parts };
+  }
+
+  function gradeClass(score, grade) {
+    var c = grade.cuts;
+    return score <= c[0] ? 0 : score <= c[1] ? 1 : score <= c[2] ? 2 : 3;
+  }
 
   function nHours(meta) { return meta.days.length * meta.hours.length; }
 
@@ -79,7 +116,7 @@
     var p = Object.assign({}, DEFAULT_PARAMS, params || {});
     var H = nHours(meta), n = floor.x.length;
     var levelM = floor.level_mm / 1000;
-    var out = { kh: [], tm52: [], peak: [], dmrt: [], sun_h: [], rad: [], df: [] };
+    var out = { kh: [], tm52: [], peak: [], dmrt: [], sun_h: [], rad: [], df: [], grade: [] };
     var temps = new Array(H);
     for (var i = 0; i < n; i++) {
       if (floor.zone[i] === ZONE.VOID) {
@@ -103,7 +140,10 @@
       out.sun_h.push(floor.sun_h[i]);
       out.rad.push(floor.rad_roof[i] * scen.solar_mult.roof + floor.rad_fac[i] * scen.solar_mult.facade);
       out.df.push(floor.df_roof[i] * scen.daylight_mult.roof + floor.df_fac[i] * scen.daylight_mult.facade);
+      out.grade.push(0);
     }
+    var gr = p.grade || GRADE_DEFAULTS;
+    for (var j = 0; j < n; j++) if (out.kh[j] !== null) out.grade[j] = gradeScore(out, j, gr).score;
     return out;
   }
 
@@ -178,6 +218,7 @@
 
   var api = {
     ZONE: ZONE, ZONE_NAMES: ZONE_NAMES, LAYERS: LAYERS, DEFAULT_PARAMS: DEFAULT_PARAMS,
+    GRADE_DEFAULTS: GRADE_DEFAULTS, GRADE_CLASSES: GRADE_CLASSES, gradeScore: gradeScore, gradeClass: gradeClass,
     computeAll: computeAll, computeFloor: computeFloor, calibrationSeries: calibrationSeries,
     tm52Fails: tm52Fails, hotspot: hotspot, range: range, tertiles: tertiles, classOf: classOf,
     zoneSummary: zoneSummary

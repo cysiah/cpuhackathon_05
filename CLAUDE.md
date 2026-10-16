@@ -19,8 +19,8 @@ Deliverables:
 ## Team decisions (16 Oct, from the team discussion)
 
 - Two jobs in one tool: (1) evaluate the **existing** condition on GF and the top floor (5F); (2) check **proposed interventions** against that benchmark ("how far, how good are we doing").
-- The headline is **overheating and how much the proposal lowers it**, not a quality score per space.
-- **No composite space score or class.** Too many factors (material, glazing ratio...). Show layers side by side; a hotspot view is a *count of flags*, never a grade.
+- The headline is **overheating and how much the proposal lowers it**.
+- **There IS a composite grade / class for spaces (spots and areas), but it is open-ended.** The user chooses which parameters count, their weights and their good/bad limits; adding a parameter changes the grade. No fixed formula can cover every factor (material, glazing ratio...), so the grade is always shown with what went into it. The hotspot view is only a count of flags.
 - The tool is **open-ended**: new parameters and data can be added later. Prefer data-driven layers over hard-coded ones.
 - The two lenses (architect vs developer / estates manager) care about different things. Spots and areas, not rooms.
 

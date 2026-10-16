@@ -20,7 +20,8 @@ Two lenses on the same data (switch at the top; wording is a placeholder, A25):
 - **Developer / estates manager:** which floor area fails and which intervention fixes the most. Opens on hotspots, with an intervention ranking by floor area in each score band.
 
 - **Plans:** GF and 5F heat maps on one shared colour scale. Voids are hatched; zones are outlined.
-- **Four views:** one layer, two layers (3×3 bivariate), hotspots (count of flags per point), change against another scenario.
+- **Five views:** one layer, two layers (3×3 bivariate), hotspots (count of flags per point), change against another scenario, and **Grade**.
+- **Grade (A30):** an open-ended composite per spot. You tick which layers count and set each one's weight and good/bad limits; each layer scores 0 (good) to 100 (bad), and the grade is the weighted average, classed Good / Fair / Poor / Critical. Defaults: overheating ×3 and TM52 ×1. The estates ranking groups floor area by this grade.
 - **Layers:** overheating K·h, TM52 criteria failed, peak temperature, solar MRT rise, sun hours, transmitted solar, daylight factor.
 - **Cross-reference:** a linked scatter. Drag a box and the matching points light up on both plans.
 - **Zone table, ledger, source labels** on every number, and the assumption register at the bottom.
