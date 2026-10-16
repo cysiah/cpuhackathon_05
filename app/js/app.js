@@ -1,0 +1,477 @@
+/* Floorplate Heat Map: the views. All maths lives in model.js (window.FM). */
+(function () {
+  "use strict";
+  var FM = window.FM;
+  var $ = function (id) { return document.getElementById(id); };
+
+  var RUNGS = ["Existing", "Keep heat out", "Store it, release it", "Ventilate passively", "Move the air", "Cool mechanically"];
+  var LEDGER_LABELS = {
+    daylight_pct: ["Atrium daylight factor", "%"],
+    fan_kwh_wk: ["Fan energy if mechanical", "kWh/wk"],
+    winter_mwh_yr: ["Winter glazing loss", "MWh/yr"],
+    embodied_tco2e: ["Embodied carbon of the move", "tCO₂e"],
+    cost_gbp: ["Capital cost", "£"],
+    pv_mwh_yr: ["PV yield", "MWh/yr"]
+  };
+  var HEAT = ["#FBF3E4", "#F6D3A1", "#EE9A5B", "#D65A31", "#9E2A2B", "#5C1A1B"];
+  var COOL = ["#F4F1EA", "#CFE0EC", "#93BDD9", "#4F8DBE", "#2A5F94", "#173A63"];
+  var DIV = ["#1F5A96", "#6E9FCB", "#C9D9E8", "#F2EEE7", "#F2C3A8", "#DB7B52", "#A3301F"];
+  var HOT = ["#E9E4DA", "#F3D27A", "#EE9A5B", "#D14B2F", "#7A1E1E"];
+  var BIV = [["#e8e8e8", "#e4acac", "#c85a5a"], ["#b0d5df", "#ad9ea5", "#985356"], ["#64acbe", "#627f8c", "#574249"]];
+  var FLOOR_COLORS = ["#2F6FB0", "#B83A14", "#2E7D4F", "#7A4FA0"];
+
+  var S = {
+    meta: null, scenarios: [], floors: {}, assumptions: [],
+    res: null, cmp: null, selected: null, view: {}
+  };
+
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function fmt(v, dp) { return v === null || v === undefined || !isFinite(v) ? "–" : Number(v).toFixed(dp); }
+  function lerpHex(a, b, t) {
+    var pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+    var r = Math.round(((pa >> 16) & 255) * (1 - t) + ((pb >> 16) & 255) * t);
+    var g = Math.round(((pa >> 8) & 255) * (1 - t) + ((pb >> 8) & 255) * t);
+    var bl = Math.round((pa & 255) * (1 - t) + (pb & 255) * t);
+    return "rgb(" + r + "," + g + "," + bl + ")";
+  }
+  function ramp(stops, t) {
+    t = Math.max(0, Math.min(1, t));
+    var x = t * (stops.length - 1), i = Math.min(Math.floor(x), stops.length - 2);
+    return lerpHex(stops[i], stops[i + 1], x - i);
+  }
+  function getJSON(url) {
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error(url + ": " + r.status);
+      return r.json();
+    });
+  }
+
+  /* ------------------------------------------------------------ state */
+  function params() {
+    return {
+      stratKperM: +$("strat").value,
+      enclosedOffsetK: +$("encOff").value,
+      calibrate: $("calibrate").checked,
+      hotKh: +$("hotKh").value,
+      darkDf: +$("darkDf").value
+    };
+  }
+  function mode() { return document.querySelector("input[name=mode]:checked").value; }
+  function scenById(id) { return S.scenarios.find(function (s) { return s.id === id; }); }
+  function zoneShown(z) {
+    if (z === FM.ZONE.ENCLOSED) return $("zEnclosed").checked;
+    if (z === FM.ZONE.OPEN) return $("zOpen").checked;
+    return false;
+  }
+
+  function recompute() {
+    var p = params();
+    S.res = FM.computeAll(S.floors, scenById($("scenario").value), S.meta, p);
+    var c = $("compare").value;
+    S.cmp = c ? FM.computeAll(S.floors, scenById(c), S.meta, p) : null;
+    render();
+  }
+
+  /* value of the active view at point i, for colouring */
+  function valueAt(fid, i) {
+    var m = mode(), a = $("layerA").value, b = $("layerB").value, r = S.res[fid];
+    if (r.kh[i] === null) return null;
+    if (m === "single") return r[a][i];
+    if (m === "bivariate") return [r[a][i], r[b][i]];
+    if (m === "hotspot") return FM.hotspot(r, i, params());
+    if (m === "delta") return S.cmp ? r[a][i] - S.cmp[fid][a][i] : null;
+  }
+
+  function scales() {
+    var a = $("layerA").value, b = $("layerB").value, all = S.meta.floors;
+    var visA = [], visB = [], dA = [];
+    all.forEach(function (fid) {
+      var f = S.floors[fid], r = S.res[fid];
+      var va = [], vb = [], dd = [];
+      for (var i = 0; i < f.x.length; i++) {
+        if (!zoneShown(f.zone[i]) || r.kh[i] === null) continue;
+        va.push(r[a][i]); vb.push(r[b][i]);
+        if (S.cmp) dd.push(r[a][i] - S.cmp[fid][a][i]);
+      }
+      visA.push(va); visB.push(vb); dA.push(dd);
+    });
+    var dr = FM.range(dA), dmax = Math.max(Math.abs(dr[0]), Math.abs(dr[1]), 1e-6);
+    return { rangeA: FM.range(visA), cutsA: FM.tertiles(visA), cutsB: FM.tertiles(visB), dmax: dmax };
+  }
+
+  function colorFor(v, sc) {
+    var m = mode(), a = $("layerA").value, L = FM.LAYERS[a];
+    if (m === "single") {
+      var t = (v - sc.rangeA[0]) / (sc.rangeA[1] - sc.rangeA[0]);
+      return ramp(L.better === "higher" ? COOL : HEAT, t);
+    }
+    if (m === "bivariate") return BIV[FM.classOf(v[1], sc.cutsB)][FM.classOf(v[0], sc.cutsA)];
+    if (m === "hotspot") return HOT[v.count];
+    if (m === "delta") {
+      if (v === null) return css("--line");
+      var worse = L.better === "higher" ? -v : v;
+      return ramp(DIV, 0.5 + 0.5 * worse / sc.dmax);
+    }
+  }
+
+  /* ------------------------------------------------------------ plans */
+  function buildPlans() {
+    var host = $("plans");
+    host.innerHTML = "";
+    S.meta.floors.forEach(function (fid) {
+      var f = S.floors[fid];
+      var xs = f.x, ys = f.y, g = f.grid_mm;
+      var minX = Math.min.apply(null, xs) - g / 2, maxX = Math.max.apply(null, xs) + g / 2;
+      var minY = Math.min.apply(null, ys) - g / 2, maxY = Math.max.apply(null, ys) + g / 2;
+      f.outline_mm.forEach(function (p) {
+        minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]);
+        minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]);
+      });
+      var pad = 60, W = 680;
+      var k = (W - 2 * pad) / (maxX - minX);
+      var H = Math.round((maxY - minY) * k + 2 * pad);
+      var lookup = {};
+      for (var i = 0; i < xs.length; i++) lookup[Math.floor((xs[i] - minX) / g) + "," + Math.floor((ys[i] - minY) / g)] = i;
+      var area = f.zone.filter(function (z) { return z !== FM.ZONE.VOID; }).length * Math.pow(g / 1000, 2);
+
+      var div = document.createElement("div");
+      div.className = "plan";
+      div.innerHTML = "<h3>" + fid + "</h3><div class='meta'>Level +" + f.level_mm.toLocaleString() +
+        " mm · floor area " + Math.round(area).toLocaleString() + " m² · grid " + g + " mm" +
+        (f.source === "DEMO" ? " · <span class='tag need'>A01 placeholder geometry</span>" : "") + "</div>";
+      var cv = document.createElement("canvas");
+      var dpr = window.devicePixelRatio || 1;
+      cv.width = W * dpr; cv.height = H * dpr;
+      cv.style.aspectRatio = W + " / " + H;
+      cv.setAttribute("aria-label", fid + " floor plan heat map");
+      div.appendChild(cv);
+      host.appendChild(div);
+      S.view[fid] = { cv: cv, k: k, pad: pad, minX: minX, minY: minY, H: H, W: W, dpr: dpr, lookup: lookup };
+      cv.addEventListener("mousemove", function (e) { hover(fid, e); });
+      cv.addEventListener("mouseleave", function () { $("tip").hidden = true; });
+    });
+  }
+
+  function toPx(v, x, y) { return [v.pad + (x - v.minX) * v.k, v.H - v.pad - (y - v.minY) * v.k]; }
+
+  function drawPlans() {
+    var sc = scales();
+    S.meta.floors.forEach(function (fid) {
+      var f = S.floors[fid], v = S.view[fid], ctx = v.cv.getContext("2d");
+      ctx.setTransform(v.dpr, 0, 0, v.dpr, 0, 0);
+      ctx.clearRect(0, 0, v.W, v.H);
+      var cell = f.grid_mm * v.k, hatch = css("--hatch"), muted = css("--line");
+      for (var i = 0; i < f.x.length; i++) {
+        var p = toPx(v, f.x[i] - f.grid_mm / 2, f.y[i] + f.grid_mm / 2);
+        if (f.zone[i] === FM.ZONE.VOID) {
+          ctx.strokeStyle = hatch; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(p[0], p[1] + cell); ctx.lineTo(p[0] + cell, p[1]); ctx.stroke();
+          continue;
+        }
+        var val = valueAt(fid, i);
+        ctx.fillStyle = zoneShown(f.zone[i]) && val !== null ? colorFor(val, sc) : muted;
+        if (S.selected && !S.selected.has(fid + ":" + i)) ctx.globalAlpha = 0.18;
+        ctx.fillRect(p[0], p[1], cell + 0.5, cell + 0.5);
+        ctx.globalAlpha = 1;
+      }
+      // zone outlines
+      ctx.setLineDash([6, 4]); ctx.lineWidth = 1.5; ctx.strokeStyle = css("--ink");
+      f.zones.forEach(function (z) {
+        if (z.rect_mm) {
+          var a = toPx(v, z.rect_mm[0], z.rect_mm[3]), b = toPx(v, z.rect_mm[2], z.rect_mm[1]);
+          ctx.strokeRect(a[0], a[1], b[0] - a[0], b[1] - a[1]);
+        } else if (z.polygon_mm) {
+          ctx.beginPath();
+          z.polygon_mm.forEach(function (q, j) { var pp = toPx(v, q[0], q[1]); j ? ctx.lineTo(pp[0], pp[1]) : ctx.moveTo(pp[0], pp[1]); });
+          ctx.closePath(); ctx.stroke();
+        }
+      });
+      ctx.setLineDash([]); ctx.lineWidth = 2;
+      ctx.beginPath();
+      f.outline_mm.forEach(function (q, j) { var pp = toPx(v, q[0], q[1]); j ? ctx.lineTo(pp[0], pp[1]) : ctx.moveTo(pp[0], pp[1]); });
+      ctx.closePath(); ctx.stroke();
+      // zone labels
+      ctx.font = "600 12px system-ui, sans-serif"; ctx.fillStyle = css("--ink");
+      f.zones.forEach(function (z) {
+        if (!z.rect_mm) return;
+        var c = toPx(v, (z.rect_mm[0] + z.rect_mm[2]) / 2, (z.rect_mm[1] + z.rect_mm[3]) / 2);
+        ctx.textAlign = "center"; ctx.fillText(z.type.toUpperCase(), c[0], c[1] + 4);
+      });
+      drawNorth(ctx, v.W - 30, 32);
+      drawScaleBar(ctx, v);
+    });
+  }
+
+  function drawNorth(ctx, cx, cy) {
+    var a = (90 + S.meta.north_angle_deg) * Math.PI / 180; // model angle of north
+    var dx = Math.cos(a), dy = -Math.sin(a);
+    ctx.strokeStyle = ctx.fillStyle = css("--ink"); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx - dx * 16, cy - dy * 16); ctx.lineTo(cx + dx * 16, cy + dy * 16); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx + dx * 16, cy + dy * 16, 3.5, 0, 7); ctx.fill();
+    ctx.font = "700 11px system-ui"; ctx.textAlign = "center"; ctx.fillText("N", cx + dx * 27, cy + dy * 27 + 4);
+  }
+  function drawScaleBar(ctx, v) {
+    var len = 10000 * v.k, x = v.pad, y = v.H - 22;
+    ctx.fillStyle = css("--ink"); ctx.fillRect(x, y, len, 4);
+    ctx.font = "11px system-ui"; ctx.textAlign = "left"; ctx.fillText("10 m", x + len + 6, y + 5);
+  }
+
+  /* ------------------------------------------------------------ tooltip */
+  function hover(fid, e) {
+    var v = S.view[fid], f = S.floors[fid], rect = v.cv.getBoundingClientRect();
+    var sx = (e.clientX - rect.left) * v.W / rect.width, sy = (e.clientY - rect.top) * v.H / rect.height;
+    var mx = (sx - v.pad) / v.k + v.minX, my = (v.H - v.pad - sy) / v.k + v.minY;
+    var i = v.lookup[Math.floor((mx - v.minX) / f.grid_mm) + "," + Math.floor((my - v.minY) / f.grid_mm)];
+    var tip = $("tip");
+    if (i === undefined) { tip.hidden = true; return; }
+    var r = S.res[fid], z = FM.ZONE_NAMES[f.zone[i]];
+    var html = "<b>" + fid + " · " + z + " · x " + Math.round(f.x[i]) + ", y " + Math.round(f.y[i]) + " mm</b>";
+    if (r.kh[i] === null) html += "Void: no floor here.";
+    else {
+      html += "<table>";
+      Object.keys(FM.LAYERS).forEach(function (key) {
+        var L = FM.LAYERS[key], d = S.cmp ? " (" + signed(r[key][i] - S.cmp[fid][key][i], L.dp) + ")" : "";
+        html += "<tr><td>" + L.label + "</td><td class='n'>" + fmt(r[key][i], L.dp) + d + " " + L.unit + "</td></tr>";
+      });
+      var hs = FM.hotspot(r, i, params());
+      var on = Object.keys(hs.flags).filter(function (k) { return hs.flags[k]; });
+      html += "</table>Hotspot flags: " + (on.length ? on.join(", ") : "none");
+    }
+    tip.innerHTML = html;
+    tip.hidden = false;
+    var x = e.clientX + 14, y = e.clientY + 14;
+    if (x + 300 > window.innerWidth) x = e.clientX - 310;
+    if (y + tip.offsetHeight > window.innerHeight) y = e.clientY - tip.offsetHeight - 10;
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+  }
+  function signed(v, dp) { return (v > 0 ? "+" : "") + fmt(v, dp); }
+
+  /* ------------------------------------------------------------ legend */
+  function drawLegend() {
+    var m = mode(), a = $("layerA").value, b = $("layerB").value, LA = FM.LAYERS[a], LB = FM.LAYERS[b];
+    var sc = scales(), host = $("legend"), tagA = "<span class='tag'>" + LA.source + "</span>";
+    if (m === "single") {
+      host.innerHTML = "<span><b>" + LA.label + "</b> (" + LA.unit + ") " + tagA + "</span>" +
+        "<span>" + fmt(sc.rangeA[0], LA.dp) + " " + bar(LA.better === "higher" ? COOL : HEAT) + " " + fmt(sc.rangeA[1], LA.dp) + "</span>" +
+        "<span>Colour scale is shared by both floors.</span>";
+    } else if (m === "bivariate") {
+      var g = "<span class='swatches' style='display:inline-grid;grid-template-columns:repeat(3,16px);gap:2px'>";
+      for (var r = 2; r >= 0; r--) for (var c = 0; c < 3; c++) g += "<span class='sw' style='background:" + BIV[r][c] + "'></span>";
+      host.innerHTML = g + "</span><span>→ <b>" + LA.label + "</b> low / mid / high (cuts " + fmt(sc.cutsA[0], LA.dp) + ", " + fmt(sc.cutsA[1], LA.dp) + " " + LA.unit +
+        ")<br>↑ <b>" + LB.label + "</b> low / mid / high (cuts " + fmt(sc.cutsB[0], LB.dp) + ", " + fmt(sc.cutsB[1], LB.dp) + " " + LB.unit +
+        ")<br>Thirds of the visible points, so each class covers about a third of the floor.</span>";
+    } else if (m === "hotspot") {
+      var p = params(), s = "<span class='swatches'>";
+      HOT.forEach(function (c, i) { s += "<span class='sw' style='background:" + c + "'></span>" + i; });
+      host.innerHTML = s + "</span><span>Number of flags per point: overheating &gt; " + p.hotKh + " K·h, TM52 fails ≥ 2 criteria, daylight &lt; " +
+        p.darkDf + "%, sun &gt; " + FM.DEFAULT_PARAMS.sunnyH + " h. Hover for which ones. <span class='tag a'>A22</span></span>";
+    } else {
+      host.innerHTML = S.cmp
+        ? "<span><b>Change in " + LA.label + "</b> (" + LA.unit + "): this scenario minus “" + scenById($("compare").value).name + "”</span>" +
+          "<span>better −" + fmt(sc.dmax, LA.dp) + " " + bar(DIV) + " +" + fmt(sc.dmax, LA.dp) + " worse</span>"
+        : "<span><b>Pick a scenario under “Compare with” to see the change.</b></span>";
+    }
+  }
+  function bar(stops) {
+    return "<span style='display:inline-block;width:160px;height:12px;border-radius:3px;vertical-align:middle;background:linear-gradient(90deg," + stops.join(",") + ")'></span>";
+  }
+
+  /* ------------------------------------------------------------ scatter */
+  var brush = null;
+  function drawScatter() {
+    var cv = $("scatter"), dpr = window.devicePixelRatio || 1, W = 460, H = 320;
+    cv.width = W * dpr; cv.height = H * dpr; cv.style.aspectRatio = W + " / " + H;
+    var ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    var a = $("layerA").value, b = $("layerB").value, LA = FM.LAYERS[a], LB = FM.LAYERS[b];
+    $("scatterTitle").textContent = LA.label + " vs " + LB.label;
+    var xa = [], yb = [];
+    S.meta.floors.forEach(function (fid) { xa.push(S.res[fid][a]); yb.push(S.res[fid][b]); });
+    var rx = FM.range(xa), ry = FM.range(yb), L = 52, R = 12, T = 12, B = 40;
+    var sx = function (v) { return L + (v - rx[0]) / (rx[1] - rx[0]) * (W - L - R); };
+    var sy = function (v) { return H - B - (v - ry[0]) / (ry[1] - ry[0]) * (H - T - B); };
+    S.scatter = { sx: sx, sy: sy, rx: rx, ry: ry, L: L, R: R, T: T, B: B, W: W, H: H };
+    ctx.strokeStyle = css("--line"); ctx.lineWidth = 1; ctx.strokeRect(L, T, W - L - R, H - T - B);
+    ctx.fillStyle = css("--muted"); ctx.font = "11px system-ui"; ctx.textAlign = "center";
+    ctx.fillText(LA.label + " (" + LA.unit + ")", L + (W - L - R) / 2, H - 8);
+    ctx.fillText(fmt(rx[0], LA.dp), L, H - B + 14); ctx.fillText(fmt(rx[1], LA.dp), W - R, H - B + 14);
+    ctx.save(); ctx.translate(14, T + (H - T - B) / 2); ctx.rotate(-Math.PI / 2);
+    ctx.fillText(LB.label + " (" + LB.unit + ")", 0, 0); ctx.restore();
+    ctx.textAlign = "right"; ctx.fillText(fmt(ry[0], LB.dp), L - 4, H - B); ctx.fillText(fmt(ry[1], LB.dp), L - 4, T + 10);
+    S.meta.floors.forEach(function (fid, fi) {
+      var f = S.floors[fid], r = S.res[fid];
+      for (var i = 0; i < f.x.length; i++) {
+        if (r.kh[i] === null || !zoneShown(f.zone[i])) continue;
+        var sel = !S.selected || S.selected.has(fid + ":" + i);
+        ctx.globalAlpha = sel ? 0.55 : 0.08;
+        ctx.fillStyle = FLOOR_COLORS[fi % FLOOR_COLORS.length];
+        ctx.fillRect(sx(r[a][i]) - 1.5, sy(r[b][i]) - 1.5, 3, 3);
+      }
+    });
+    ctx.globalAlpha = 1;
+    ctx.textAlign = "left"; ctx.font = "600 11px system-ui";
+    S.meta.floors.forEach(function (fid, fi) {
+      ctx.fillStyle = FLOOR_COLORS[fi % FLOOR_COLORS.length]; ctx.fillText("■ " + fid, L + 8 + fi * 44, T + 14);
+    });
+    if (brush) {
+      ctx.strokeStyle = css("--ink"); ctx.setLineDash([4, 3]);
+      ctx.strokeRect(brush.x0, brush.y0, brush.x1 - brush.x0, brush.y1 - brush.y0); ctx.setLineDash([]);
+    }
+  }
+  function scatterPos(e) {
+    var cv = $("scatter"), r = cv.getBoundingClientRect();
+    return [(e.clientX - r.left) * S.scatter.W / r.width, (e.clientY - r.top) * S.scatter.H / r.height];
+  }
+  function wireScatter() {
+    var cv = $("scatter"), down = null;
+    cv.addEventListener("mousedown", function (e) { down = scatterPos(e); brush = null; });
+    window.addEventListener("mousemove", function (e) {
+      if (!down) return;
+      var p = scatterPos(e);
+      brush = { x0: Math.min(down[0], p[0]), y0: Math.min(down[1], p[1]), x1: Math.max(down[0], p[0]), y1: Math.max(down[1], p[1]) };
+      drawScatter();
+    });
+    window.addEventListener("mouseup", function () {
+      if (!down) return;
+      down = null;
+      if (!brush || brush.x1 - brush.x0 < 3 || brush.y1 - brush.y0 < 3) { brush = null; S.selected = null; render(); return; }
+      var a = $("layerA").value, b = $("layerB").value, sel = new Set();
+      S.meta.floors.forEach(function (fid) {
+        var f = S.floors[fid], r = S.res[fid];
+        for (var i = 0; i < f.x.length; i++) {
+          if (r.kh[i] === null || !zoneShown(f.zone[i])) continue;
+          var x = S.scatter.sx(r[a][i]), y = S.scatter.sy(r[b][i]);
+          if (x >= brush.x0 && x <= brush.x1 && y >= brush.y0 && y <= brush.y1) sel.add(fid + ":" + i);
+        }
+      });
+      S.selected = sel;
+      render();
+    });
+  }
+
+  /* ------------------------------------------------------------ tables */
+  function drawZoneTable() {
+    var p = params(), rows = "", head = "<tr><th>Floor</th><th>Zone</th><th class='n'>Area m²</th><th class='n'>Mean K·h</th>" +
+      (S.cmp ? "<th class='n'>Δ K·h</th>" : "") + "<th class='n'>Area &gt; " + p.hotKh + " K·h</th><th class='n'>TM52 ≥ 2 fails</th><th class='n'>Mean DF %</th></tr>";
+    S.meta.floors.forEach(function (fid) {
+      var zs = FM.zoneSummary(S.floors[fid], S.res[fid], p);
+      var zc = S.cmp ? FM.zoneSummary(S.floors[fid], S.cmp[fid], p) : null;
+      ["enclosed", "open", "void"].forEach(function (z) {
+        var r = zs[z];
+        if (!r) return;
+        var pct = function (x) { return r.n ? Math.round(100 * x / r.area) + "%" : "–"; };
+        rows += "<tr><td>" + fid + "</td><td>" + z + "</td><td class='n'>" + Math.round(r.area) + "</td><td class='n'>" + fmt(r.kh, 0) + "</td>" +
+          (S.cmp ? "<td class='n'>" + (r.kh === null ? "–" : signed(r.kh - zc[z].kh, 0)) + "</td>" : "") +
+          "<td class='n'>" + pct(r.hotArea) + "</td><td class='n'>" + pct(r.tm52Area) + "</td><td class='n'>" + fmt(r.df, 1) + "</td></tr>";
+      });
+    });
+    $("zoneTable").innerHTML = head + rows;
+
+    // calibration note: GF atrium floor mean vs EnergyPlus score
+    var f0 = S.meta.floors[0], f = S.floors[f0], r0 = S.res[f0], s = 0, n = 0;
+    for (var i = 0; i < f.x.length; i++) if (f.in_atrium[i] && r0.kh[i] !== null) { s += r0.kh[i]; n++; }
+    var sc = scenById($("scenario").value);
+    $("calNote").innerHTML = "Check: " + f0 + " atrium floor averages <b>" + fmt(s / n, 0) + " K·h</b>; the atrium score is <b>" +
+      fmt(sc.atrium_score_kh, 0) + " K·h</b> <span class='tag " + (sc.score_source === "EnergyPlus" ? "sim" : "prx") + "'>" + sc.score_source + "</span>." +
+      (p.calibrate ? "" : " Re-centring is off, so these will differ.");
+  }
+
+  function drawLedger() {
+    var sc = scenById($("scenario").value), cmp = S.cmp ? scenById($("compare").value) : null;
+    var rows = "<tr><th>Account</th><th class='n'>" + (cmp ? "This" : "Value") + "</th>" + (cmp ? "<th class='n'>Compare</th>" : "") + "<th>Source</th></tr>";
+    var cell = function (e, unit) {
+      return !e || e.value === null ? "<span class='tag need'>needs input</span>" : e.value.toLocaleString() + " " + unit;
+    };
+    rows += "<tr><td>Atrium overheating</td><td class='n'>" + sc.atrium_score_kh + " K·h</td>" + (cmp ? "<td class='n'>" + cmp.atrium_score_kh + " K·h</td>" : "") +
+      "<td><span class='tag " + (sc.score_source === "EnergyPlus" ? "sim" : "prx") + "'>" + sc.score_source + "</span>" +
+      (sc.id === "lowg_night" ? " <span class='tag a'>A23</span>" : "") + "</td></tr>";
+    Object.keys(LEDGER_LABELS).forEach(function (k) {
+      var e = sc.ledger[k], c = cmp ? cmp.ledger[k] : null;
+      if (!e && !c) return;
+      var lab = LEDGER_LABELS[k];
+      rows += "<tr><td>" + lab[0] + "</td><td class='n'>" + cell(e, lab[1]) + "</td>" + (cmp ? "<td class='n'>" + cell(c, lab[1]) + "</td>" : "") +
+        "<td>" + (e && e.value !== null ? "<span class='tag " + (e.source === "proxy" ? "prx" : e.source === "assumed" ? "a" : "est") + "'>" + e.source + "</span>" : "<span class='tag a'>A24</span>") + "</td></tr>";
+    });
+    $("ledger").innerHTML = rows;
+  }
+
+  function drawAssumptions() {
+    var rows = "<tr><th>ID</th><th>What</th><th>Placeholder in use</th><th>Question for you</th><th>Status</th></tr>";
+    S.assumptions.forEach(function (a) {
+      rows += "<tr><td>" + a.id + "</td><td>" + a.what + "</td><td>" + a.placeholder + "</td><td class='q'>" + a.question +
+        "</td><td><span class='tag " + (a.status === "answered" ? "sim" : "need") + "'>" + a.status + "</span></td></tr>";
+    });
+    $("assumpTable").innerHTML = rows;
+    var open = S.assumptions.filter(function (a) { return a.status !== "answered"; }).length;
+    $("assumpCount").textContent = open + " open of " + S.assumptions.length;
+  }
+
+  function drawScenarioInfo() {
+    var sc = scenById($("scenario").value);
+    $("scenarioInfo").innerHTML = "Cooling rung: <b>" + RUNGS[sc.rung] + "</b>. Atrium score " + sc.atrium_score_kh +
+      " K·h <span class='tag " + (sc.score_source === "EnergyPlus" ? "sim" : "prx") + "'>" + sc.score_source + "</span>." +
+      (sc.t_op_source === "DEMO" ? " Hourly temperatures are a DEMO shape scaled to that score <span class='tag a'>A16</span>." : "");
+  }
+
+  function render() {
+    $("layerBWrap").style.opacity = mode() === "bivariate" ? 1 : 0.7;
+    drawScenarioInfo();
+    drawPlans();
+    drawLegend();
+    drawScatter();
+    drawZoneTable();
+    drawLedger();
+  }
+
+  /* ------------------------------------------------------------ boot */
+  function fillSelect(el, items, value) {
+    el.innerHTML = items.map(function (it) { return "<option value='" + it[0] + "'>" + it[1] + "</option>"; }).join("");
+    el.value = value;
+  }
+
+  function boot() {
+    Promise.all([getJSON("data/meta.json"), getJSON("data/scenarios.json"), getJSON("data/assumptions.json")])
+      .then(function (r) {
+        S.meta = r[0]; S.scenarios = r[1]; S.assumptions = r[2];
+        return Promise.all(S.meta.floors.map(function (fid) {
+          return getJSON("data/floors/" + fid + ".json").then(function (f) { S.floors[fid] = f; });
+        }));
+      })
+      .then(function () {
+        $("question").textContent = S.meta.question || "";
+        $("demoFlag").hidden = !S.meta.demo;
+        var sc = S.scenarios.map(function (s) { return [s.id, s.name]; });
+        fillSelect($("scenario"), sc, S.scenarios[0].id);
+        fillSelect($("compare"), [["", "Nothing"]].concat(sc), "");
+        var ly = Object.keys(FM.LAYERS).map(function (k) { return [k, FM.LAYERS[k].label]; });
+        fillSelect($("layerA"), ly, "kh");
+        fillSelect($("layerB"), ly, "df");
+        buildPlans();
+        drawAssumptions();
+        [["strat", "stratOut", 1], ["encOff", "encOut", 1], ["hotKh", "hotOut", 0], ["darkDf", "darkOut", 1]].forEach(function (s) {
+          var upd = function () { $(s[1]).textContent = (+$(s[0]).value).toFixed(s[2]); };
+          upd();
+          $(s[0]).addEventListener("input", function () { upd(); recompute(); });
+        });
+        ["scenario", "compare", "calibrate"].forEach(function (id) { $(id).addEventListener("change", recompute); });
+        ["layerA", "layerB", "zEnclosed", "zOpen"].forEach(function (id) { $(id).addEventListener("change", function () { S.selected = null; render(); }); });
+        document.querySelectorAll("input[name=mode]").forEach(function (el) {
+          el.addEventListener("change", function () {
+            if (mode() === "delta" && !$("compare").value) {
+              $("compare").value = S.scenarios[0].id === $("scenario").value && S.scenarios[1] ? S.scenarios[0].id : S.scenarios[0].id;
+              if ($("compare").value === $("scenario").value && S.scenarios[1]) $("scenario").value = S.scenarios[1].id;
+              recompute(); return;
+            }
+            render();
+          });
+        });
+        wireScatter();
+        if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+        recompute();
+      })
+      .catch(function (err) {
+        document.querySelector("main").innerHTML = "<div class='card'><h2>Could not load the data</h2><p>" + err.message +
+          "</p><p>Serve the app folder over HTTP (<code>python -m http.server 8000</code>) rather than opening index.html directly.</p></div>";
+      });
+  }
+  boot();
+})();

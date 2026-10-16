@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Floorplate Heat Map</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="top">
+  <div>
+    <p class="eyebrow">Team 05 · Track 01 · Forecast Factory X</p>
+    <h1>Floorplate Heat Map</h1>
+    <p class="question" id="question"></p>
+  </div>
+  <div class="demo-flag" id="demoFlag" hidden>
+    <b>DEMO DATA</b>
+    <span>Geometry, hourly temperatures and sun are placeholders. See the assumption list below before quoting any number.</span>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="controls" aria-label="Controls">
+    <section>
+      <h2>Scenario</h2>
+      <label>Show <select id="scenario"></select></label>
+      <label>Compare with <select id="compare"></select></label>
+      <p class="hint" id="scenarioInfo"></p>
+    </section>
+
+    <section>
+      <h2>View</h2>
+      <div class="seg" role="radiogroup" id="mode">
+        <label><input type="radio" name="mode" value="single" checked> One layer</label>
+        <label><input type="radio" name="mode" value="bivariate"> Two layers</label>
+        <label><input type="radio" name="mode" value="hotspot"> Hotspots</label>
+        <label><input type="radio" name="mode" value="delta"> Change</label>
+      </div>
+      <label>Layer A <select id="layerA"></select></label>
+      <label id="layerBWrap">Layer B <select id="layerB"></select></label>
+    </section>
+
+    <section>
+      <h2>Zones</h2>
+      <label class="check"><input type="checkbox" id="zEnclosed" checked> Enclosed</label>
+      <label class="check"><input type="checkbox" id="zOpen" checked> Open</label>
+      <p class="hint">Voids have no floor and are always hatched.</p>
+    </section>
+
+    <section>
+      <h2>Assumptions you can change</h2>
+      <label>Warm air rising, K per m above GF <span class="tag a">A18</span>
+        <input type="range" id="strat" min="0" max="1.5" step="0.1" value="0"><output id="stratOut">0.0</output></label>
+      <label>Enclosed rooms vs atrium, K <span class="tag a">A19</span>
+        <input type="range" id="encOff" min="-3" max="3" step="0.5" value="0"><output id="encOut">0.0</output></label>
+      <label>Hotspot: overheating above, K·h <span class="tag a">A22</span>
+        <input type="range" id="hotKh" min="0" max="400" step="2" value="42"><output id="hotOut">42</output></label>
+      <label>Hotspot: too dark below, DF % <span class="tag a">A22</span>
+        <input type="range" id="darkDf" min="0" max="10" step="0.5" value="2"><output id="darkOut">2.0</output></label>
+      <label class="check"><input type="checkbox" id="calibrate" checked> Re-centre on EnergyPlus <span class="tag a">A20</span></label>
+    </section>
+  </aside>
+
+  <main>
+    <div class="plans" id="plans"></div>
+    <div class="legend" id="legend"></div>
+
+    <div class="cards">
+      <section class="card">
+        <h2>Cross-reference <span class="sub" id="scatterTitle"></span></h2>
+        <canvas id="scatter" width="460" height="320" aria-label="Scatter plot of layer A against layer B; drag to select points"></canvas>
+        <p class="hint">Each dot is one grid point. Drag a box to pick points and see where they are on the plans. Click to clear.</p>
+      </section>
+      <section class="card">
+        <h2>By zone</h2>
+        <div class="scroll"><table id="zoneTable"></table></div>
+        <p class="hint" id="calNote"></p>
+      </section>
+      <section class="card">
+        <h2>Ledger <span class="sub">whole building, this scenario</span></h2>
+        <table id="ledger"></table>
+      </section>
+    </div>
+
+    <section class="card wide">
+      <h2>Where the numbers come from</h2>
+      <div class="sources">
+        <div><span class="tag sim">EnergyPlus</span> Simulated. The atrium score and hourly zone temperature.</div>
+        <div><span class="tag sim">Ladybug</span> Simulated. Sun hours and radiation on the floor grid.</div>
+        <div><span class="tag est">derived + estimate</span> EnergyPlus air temperature plus a SolarCal estimate of sun on a person, at each point.</div>
+        <div><span class="tag prx">proxy</span> Simple physics with editable inputs. Use it for comparing options.</div>
+        <div><span class="tag a">A##</span> An assumption or placeholder. Listed below, waiting for your answer.</div>
+      </div>
+    </section>
+
+    <section class="card wide" id="assumptions">
+      <h2>Assumptions and placeholders <span class="sub" id="assumpCount"></span></h2>
+      <div class="scroll"><table id="assumpTable"></table></div>
+    </section>
+  </main>
+</div>
+
+<div class="tip" id="tip" hidden></div>
+
+<script src="js/model.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

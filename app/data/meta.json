@@ -1,0 +1,46 @@
+{
+ "project": "Team 05 - Floorplate Heat Map",
+ "question": "Where on GF and 5F do people overheat, and what does each intervention fix? (A25 placeholder)",
+ "units": {
+  "length": "mm",
+  "angle": "degrees",
+  "temperature": "C"
+ },
+ "north_angle_deg": 60.9,
+ "days": [
+  "14 Jun",
+  "15 Jun",
+  "16 Jun",
+  "17 Jun",
+  "18 Jun",
+  "19 Jun",
+  "20 Jun"
+ ],
+ "hours": [
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17
+ ],
+ "t_rm": [
+  17.5,
+  18.3,
+  19.4,
+  20.6,
+  21.2,
+  20.8,
+  20.1
+ ],
+ "t_rm_source": "DEMO",
+ "floors": [
+  "GF",
+  "5F"
+ ],
+ "demo": true
+}
