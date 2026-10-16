@@ -16,6 +16,7 @@ That session had already absorbed the earlier "CPU Hackathon brainstorm" chat.
   - whole-building diagnosis for Track 1
   - the atrium for the official score (and Track 2)
   - context what-if scenarios (existing, removed or future towers) as a tool feature
+- **Update (16 Oct, after import):** the team is focusing mainly on **Track 1**. Track 2 is out of scope unless the user raises it.
 - Hand-drawn façade zones from the user's earlier semester-2 façade script are **not** relevant to this tool.
 
 ### Track 01 rules (from Track01_Guide.pdf)
