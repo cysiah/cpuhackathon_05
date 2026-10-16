@@ -3,15 +3,15 @@
   "id": "A01",
   "group": "Geometry",
   "what": "GF and 5F floorplate outlines",
-  "placeholder": "48,000 × 30,000 mm rectangle for both floors",
-  "question": "Can you give me the real outlines? (closed planar curves in Rhino on layers FLOOR::GF and FLOOR::5F)",
-  "status": "open"
+  "placeholder": "GF is the EnergyPlus atrium floor (38.35 × 26.35 m, from the official model). 5F reuses that footprint as a 4 m open gallery ring around a void. No other floor-plate geometry yet.",
+  "question": "Can you give me the real GF and 5F floor-plate outlines from the Rhino model (the Rhino session was asked to extract them)? Is the atrium footprint really this rectangle?",
+  "status": "partial"
  },
  {
   "id": "A02",
   "group": "Geometry",
   "what": "Analysis grid",
-  "placeholder": "1,000 mm grid, sensors 1,100 mm above floor (seated)",
+  "placeholder": "1 m grid (988 points per floor), sensors 1.1 m above the floor, seated.",
   "question": "Is 1,000 mm fine enough? Should sensors be seated (1,100) or standing (1,500)?",
   "status": "open"
  },
@@ -19,57 +19,57 @@
   "id": "A03",
   "group": "Geometry",
   "what": "Atrium void footprint",
-  "placeholder": "18,000 × 12,000 mm, centred",
-  "question": "What is the real void outline on each floor? Does it change shape between GF and 5F?",
+  "placeholder": "5F void = the atrium footprint inset by a 4 m gallery on every side. Real galleries are probably not a uniform ring.",
+  "question": "What is the real void outline on 5F, and how wide are the galleries?",
   "status": "open"
  },
  {
   "id": "A04",
   "group": "Geometry",
   "what": "5F floor level",
-  "placeholder": "+16,000 mm (atrium roof is at +19,350 mm)",
-  "question": "What is the 5F finished floor level? Is 5F still inside the atrium (below the roof glass) or above it?",
+  "placeholder": "5F at +16.0 m. The E+ atrium walls reach 19.35 m and the roof ridge is at 22.97 m, so the upper floor sits 3.35 m below the clerestory base.",
+  "question": "What is the 5F finished floor level, and is it inside the atrium volume?",
   "status": "open"
  },
  {
   "id": "A05",
   "group": "Zoning",
   "what": "Enclosed / open / void zoning",
-  "placeholder": "6 m strips on the north and east sides are enclosed; the rest is open  [ANSWER: You want areas, not rooms; GF and 5F one floor each. Zones are being requested from the Rhino model.]",
-  "question": "Can you draw the zones in Rhino on layers ZONE::Enclosed, ZONE::Open and ZONE::Void? How do you define 'enclosed' (full-height walls and a door?)",
+  "placeholder": "Only open and void exist in the data. No enclosed rooms yet, because the E+ model has none and the Rhino floor plans are not in.",
+  "question": "Can you mark enclosed rooms on the real plans (layers ZONE::Enclosed / ZONE::Void)? How do you define 'enclosed'?",
   "status": "open"
  },
  {
   "id": "A06",
   "group": "Glazing",
   "what": "Roof glazing solar transmittance",
-  "placeholder": "0.55 (baseline g 0.6)",
+  "placeholder": "Roof and clerestory glass transmit the beam at 0.85 × g. At g 0.6 that is 0.51. The app scales all sun data by g/0.6; the roof screen scales roof sun by (1 − opacity).",
   "question": "Use the official model's roof g-value, or a measured product value?",
   "status": "open"
  },
  {
   "id": "A07",
   "group": "Glazing",
-  "what": "Facade glazing solar transmittance",
-  "placeholder": "0.50",
-  "question": "What glass is in the GF and 5F facades?",
+  "what": "Perimeter facade windows",
+  "placeholder": "Not modelled. Sun reaches points only through the atrium's own roof, clerestory and gable glass (the glazing EnergyPlus models). Sun through the building's outer facades into rooms is missing.",
+  "question": "Do you want perimeter-room sun? It needs the real window positions and the floor plates.",
   "status": "open"
  },
  {
   "id": "A08",
   "group": "Glazing",
-  "what": "Facade windows",
-  "placeholder": "40% window-to-wall ratio, head at 2,700 mm; sun spread evenly along the facade (no real window positions)",
-  "question": "Can we export the real window openings for GF and 5F?",
+  "what": "Facade windows into galleries and rooms",
+  "placeholder": "Not modelled, as A07.",
+  "question": "Same as A07.",
   "status": "open"
  },
  {
   "id": "A09",
   "group": "Context",
-  "what": "Shading from neighbours on GF",
-  "placeholder": "GF facades get 50% of their sun; 5F gets 100%",
-  "question": "Run Ladybug sun hours with the context model instead? Which context set: existing, removed or future towers?",
-  "status": "open"
+  "what": "Shading from neighbours",
+  "placeholder": "The 188 shading surfaces of the official EnergyPlus model are used for every ray. The guide says only 8 of 99 neighbours rise above the clerestory, so context barely matters for the atrium.",
+  "question": "Do you want the full city mesh (context.json) too, or is the official model's shading enough?",
+  "status": "answered"
  },
  {
   "id": "A10",
@@ -106,48 +106,48 @@
  {
   "id": "A14",
   "group": "Climate",
-  "what": "Sun position and irradiance",
-  "placeholder": "Synthetic clear-ish sky over 14–20 June in Manchester",
-  "question": "Replace with the morphed 2050 EPW hot week from the starter pack (I need the file or its exported hourly values)",
-  "status": "open"
+  "what": "Sun and weather",
+  "placeholder": "REAL. Hourly dry-bulb, direct normal and global radiation from the organisers' 2050 crude-morph weather file for 14-20 June; sun position computed for Manchester Airport (53.354 N, 2.275 W). Diffuse = global − direct × sin(altitude).",
+  "question": "Nothing needed, unless you want a different weather year.",
+  "status": "answered"
  },
  {
   "id": "A15",
   "group": "Daylight",
   "what": "Daylight factor per point",
-  "placeholder": "Geometric proxy from view of the roof opening and distance from the facade",
-  "question": "Run a Honeybee daylight-factor grid on GF and 5F? Is DF the daylight metric you want, or sDA/UDI?",
+  "placeholder": "Per-point daylight factor = share of the sky seen through the glass × glass transmittance × 0.75 frame × 0.8 maintenance. Same constants as the starter app's average DF, but per point. Not Radiance: no glare, no sun patches.",
+  "question": "Run a Honeybee/Radiance daylight grid on GF and 5F? Is DF the right daylight metric (vs sDA/UDI)?",
   "status": "open"
  },
  {
   "id": "A16",
   "group": "EnergyPlus",
   "what": "Hourly atrium operative temperature per scenario",
-  "placeholder": "DEMO daily curve, scaled so its K·h matches each scenario's score  [ANSWER: Rhino session reports every sweep run (3,125 + 40 validation) stores 168 hourly operative temperatures for the hot week. Real scenario series requested from it; not yet received.]",
-  "question": "Paste the Rhino session's report so I can replace the demo curves with the real hourly series.",
-  "status": "partial"
+  "placeholder": "REAL. All 3,125 runs (and 40 off-grid runs) store 168 hourly operative temperatures. Any design's hourly series is interpolated from them. Stored to 0.25 °C, so a series can differ from the exact score by under 1 K·h.",
+  "question": "Nothing needed.",
+  "status": "answered"
  },
  {
   "id": "A17",
   "group": "Climate",
   "what": "TM52 running-mean outdoor temperature",
-  "placeholder": "DEMO values 17.5–21.2 °C per day",
-  "question": "Compute from the 2050 EPW (needs the days before 14 June too)",
-  "status": "open"
+  "placeholder": "REAL. Running-mean outdoor temperature from the 2050 weather file (alpha 0.8), 17-22 °C across the week.",
+  "question": "Nothing needed.",
+  "status": "answered"
  },
  {
   "id": "A18",
   "group": "Physics",
   "what": "Warm air rising (stratification)",
-  "placeholder": "0 K per metre (off); slider in the app",
-  "question": "Do you want a gradient on? What value, and from what source (mentor, CIBSE guide, measured)?",
+  "placeholder": "0 K per metre (off), slider in the app. The upper floor sits near the roof glass, so real stratification would make it hotter than shown.",
+  "question": "Should it be on by default? What value, and from what source?",
   "status": "open"
  },
  {
   "id": "A19",
   "group": "Physics",
   "what": "Enclosed rooms' air temperature",
-  "placeholder": "Same as the atrium + 0 K; slider in the app",
+  "placeholder": "No enclosed rooms yet (A05). When there are, they take the atrium temperature + this offset (0 K).",
   "question": "Enclosed rooms are not simulated. Accept the atrium temperature as a stand-in, or simulate them as their own zones?",
   "status": "open"
  },
@@ -178,9 +178,9 @@
  {
   "id": "A23",
   "group": "Scenarios",
-  "what": "Scenario list and multipliers",
-  "placeholder": "7 scenarios taken from The Heat Ledger; screens and frit scale roof sun linearly. 'g 0.2 + night purge' score of 40 K·h is a placeholder (the guide says it passes, gives no number)",
-  "question": "Which interventions do you want on the menu? Can you get the real scores for each from the sweep?",
+  "what": "Interventions on the menu",
+  "placeholder": "11 presets, all real EnergyPlus grid designs (roof screens, low-g glass, night purge, day ventilation, one combination) plus the lowest-score design that keeps daylight ≥ 5%. You can also move all five levers. NOT offered yet: PV frit, replacing roof glass with panels, fans, internal blinds, more thermal mass (the starter calls these approximations or needs new simulation).",
+  "question": "Which interventions beyond the five levers should we add as labelled approximations?",
   "status": "open"
  },
  {
@@ -219,17 +219,17 @@
   "id": "A28",
   "group": "Brief",
   "what": "Score bands applied to single points (superseded)",
-  "placeholder": "Replaced by the grade classes (A30). The estates ranking now groups floor area by grade class, not by the atrium's PASS / MARGINAL / OVERHEATING bands.",
+  "placeholder": "Superseded by the grade classes (A30).",
   "question": "Is it fair to grade a point on the atrium's bands, or does the estates lens need a different test (e.g. TM52, or % of occupied hours above 26 °C)?",
   "status": "answered"
  },
  {
   "id": "A29",
   "group": "Brief",
-  "what": "The Heat Ledger guide's numbers",
-  "placeholder": "The 7 scenarios and their scores (122, 35, 155, 192, 225, TM52 counts) come from the guide 'The heat ledger'. The Rhino session found that the files the guide cites (mechanisms.js, design_catalogue.json, TM52 outputs) are NOT in your 4_Atrium_Heat_Lab folder, so the guide may describe a newer version of the pack.",
-  "question": "Where did 'The heat ledger' come from (organisers, another team, a Miro board)? Until the Rhino session checks sweep.json, treat its scores and the frit / panel / TM52 figures as unverified.",
-  "status": "open"
+  "what": "Where 'The heat ledger' came from",
+  "placeholder": "ANSWERED. It documents the newer Atrium Heat Lab pack (the zip). We checked its numbers against the sweep: 1,041 designs pass, 241 pass TM52, 248 pass with daylight ≥ 5%, 9 pass unshaded-roof, outdoor air scores 46.8, U-value effect −232.6 vs −5.9. All reproduce. Your local 4_Atrium_Heat_Lab folder is the older pack without mechanisms.js and the catalogue.",
+  "question": "Nothing needed. Use the newer pack (now in starter/).",
+  "status": "answered"
  },
  {
   "id": "A30",
@@ -237,6 +237,22 @@
   "what": "Composite grade / class for spots",
   "placeholder": "Team decision (corrected): there IS a grade, built from whichever parameters the user switches on, with editable weights and good/bad limits. Defaults: overheating K·h (weight 3) + TM52 fails (weight 1) on; daylight etc. off. Classes Good / Fair / Poor / Critical at 15 / 40 / 70 out of 100.",
   "question": "Which parameters should count by default for each lens? What weights? What counts as 'good' and 'bad' for each (limits)? Should the class names be A-D, or Good-Critical?",
+  "status": "open"
+ },
+ {
+  "id": "A31",
+  "group": "Geometry",
+  "what": "The atrium box is the official model's, not the Rhino atrium",
+  "placeholder": "Rays are cast against the 11 faces EnergyPlus uses (walls opaque, roof/clerestory/gables fully glazed). The real building's glazing, galleries and interior surfaces differ in detail.",
+  "question": "Run tools/export_atrium_geometry.py in Rhino to export the real atrium faces, and I will cast rays against those instead.",
+  "status": "open"
+ },
+ {
+  "id": "A32",
+  "group": "Comfort model",
+  "what": "Sun-on-a-person estimate",
+  "placeholder": "Simplified SolarCal (ASHRAE 55) with a fixed seated projected-area factor of 0.25. 'Sun hours' count hours with direct beam ≥ 120 W/m². Wall and floor surface temperatures are not modelled.",
+  "question": "Is a posture-independent estimate acceptable, or do you want the full Ladybug SolarCal component on the real grid?",
   "status": "open"
  }
 ]

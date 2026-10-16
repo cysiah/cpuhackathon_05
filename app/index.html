@@ -4,7 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Floorplate Heat Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="css/style.css">
+<script>
+  (function () {  // ?embed=1 hides the page title; ?theme=light pins the light theme (the site is light only)
+    var q = new URLSearchParams(location.search);
+    if (q.get("theme") === "light") document.documentElement.setAttribute("data-theme", "light");
+    if (q.get("embed")) document.addEventListener("DOMContentLoaded", function () { document.body.classList.add("embed"); });
+  })();
+</script>
 </head>
 <body>
 <header class="top">
@@ -28,10 +38,12 @@
 <div class="layout">
   <aside class="controls" aria-label="Controls">
     <section>
-      <h2>Scenario</h2>
+      <h2>Intervention</h2>
       <label>Show <select id="scenario"></select></label>
       <label>Compare with <select id="compare"></select></label>
+      <div id="levers" class="levers"></div>
       <p class="hint" id="scenarioInfo"></p>
+      <p class="hint">The five levers are the ones the organisers simulated. Between simulated designs the atrium temperature is interpolated from the 3,125 EnergyPlus runs.</p>
     </section>
 
     <section>
@@ -77,6 +89,11 @@
   </aside>
 
   <main>
+    <section class="card wide verdict" id="verdictCard">
+      <h2>Verdict <span class="sub">this design against the existing atrium</span></h2>
+      <div id="verdict"></div>
+    </section>
+
     <div class="plans" id="plans"></div>
     <div class="legend" id="legend"></div>
 
@@ -103,7 +120,7 @@
       <p class="hint">Each grid point gets the grade you set on the left (which layers count, their weights and limits), and its area is added up per class over the zones ticked on the left. Click a row to show it on the plans. Cost and carbon stay “needs input” until the rates are sourced (A24).</p>
     </section>
 
-    <section class="card wide">
+    <section class="card wide" id="sourcesCard">
       <h2>Where the numbers come from</h2>
       <div class="sources">
         <div><span class="tag sim">EnergyPlus</span> Simulated. The atrium score and hourly zone temperature.</div>
@@ -112,6 +129,20 @@
         <div><span class="tag prx">proxy</span> Simple physics with editable inputs. Use it for comparing options.</div>
         <div><span class="tag a">A##</span> An assumption or placeholder. Listed below, waiting for your answer.</div>
       </div>
+    </section>
+
+    <section class="card wide" id="critiqueCard">
+      <h2>Reading the starter critically <span class="sub">what the organisers' sweep says when you check it (tools/critique_stats.py)</span></h2>
+      <ul class="crit">
+        <li><b>“1,041 designs pass” is mostly a darkening trick.</b> Only 248 of them keep daylight ≥ 5% and 9 keep ≥ 10%. No passing design has an unshaded roof with g ≥ 0.5. <span class="tag sim">EnergyPlus</span> <span class="tag prx">proxy for daylight</span></li>
+        <li><b>800 of those 1,041 fail TM52</b> (the UK adaptive standard) when checked on the same hourly results. Only 241 pass both. A pass on the score is not a comfortable room. <span class="tag sim">derived</span></li>
+        <li><b>The score is mostly radiant sun, not air.</b> The baseline scores 321 K·h on operative temperature but 127 on air temperature; operative runs up to 5.9 K above air. One well-mixed zone cannot say <i>where</i> a person stands in that sun. This tool's map is built for exactly that gap. <span class="tag sim">EnergyPlus</span></li>
+        <li><b>The street itself fails.</b> Outdoor air scores 46.8 K·h against a 42 limit, so passing means the atrium must be cooler than outdoors at peak, which only night-cooled concrete or heavy shading can do.</li>
+        <li><b>Insulation looks harmful.</b> Raising the glass U-value from 1.0 to 5.8 lowers the score by 233 K·h with no shading, but by only 6 behind a 90% screen. The lever rewards leaky glass in summer and the winter bill is outside the model <span class="tag prx">proxy</span>.</li>
+        <li><b>The surrogate is least trustworthy where it matters.</b> Typical error is 2.2 K·h for designs scoring under 100, but the worst case is 20.4 K·h, half the pass limit. Near the pass line, check with a real run.</li>
+        <li><b>The map is an estimate on top of an average.</b> EnergyPlus gives one temperature for the whole atrium. Our per-spot variation is the sun on a person (SolarCal) added to it and re-centred so the floor average matches EnergyPlus. It does not model stratification, wall surface temperatures, glare or wind.</li>
+        <li><b>The 2050 weather is a crude morph</b> (+1.5 °C everywhere plus a 4 °C pulse). Use it to compare designs, not to predict a year.</li>
+      </ul>
     </section>
 
     <section class="card wide" id="assumptions">
@@ -123,7 +154,10 @@
 
 <div class="tip" id="tip" hidden></div>
 
+<script src="../js/sweep.js"></script>
+<script src="data/bundle.js"></script>
 <script src="js/model.js"></script>
+<script src="js/scenario.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

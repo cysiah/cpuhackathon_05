@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The heat ledger</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400;62..125,500;62..125,700;62..125,800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Companion to "Hot under glass": same tokens and components, one reading column with full-width figures and tables.
+   Ledger idea: every page section books heat, energy, light or carbon into an account. */
+:root{
+  --bg:#EDF1F3; --surface:#FFFFFF; --ink:#18212B; --muted:#5B6773; --line:#C8D1D8;
+  --cold:#2F5FB3; --warm:#D98A12; --hot:#C2303B; --tint:#E2E9EE; --note:#FFF4DC; --ok:#2E7D4F;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --sans:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10151B; --surface:#18202A; --ink:#E4EAF0; --muted:#97A4B0; --line:#2C3743;
+    --cold:#7FA3EC; --warm:#F0B24A; --hot:#F2666F; --tint:#1D2630; --note:#2B2414; --ok:#5CC58A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10151B; --surface:#18202A; --ink:#E4EAF0; --muted:#97A4B0; --line:#2C3743;
+  --cold:#7FA3EC; --warm:#F0B24A; --hot:#F2666F; --tint:#1D2630; --note:#2B2414; --ok:#5CC58A;
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);font-size:18px;line-height:1.6;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+h1,h2,h3,.sans{font-family:var(--sans);text-wrap:balance}
+main{max-width:1000px;margin:0 auto;padding-block:0 80px}
+.col{max-width:680px}
+.kicker{font-family:var(--sans);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:48px 0 0}
+h1{font-stretch:125%;font-weight:800;font-size:clamp(40px,8vw,84px);line-height:.95;letter-spacing:-.02em;margin:10px 0 16px}
+h2{font-stretch:110%;font-weight:700;font-size:28px;line-height:1.2;margin:72px 0 12px}
+h3{font-weight:700;font-size:19px;margin:28px 0 6px}
+p{margin:0 0 14px}
+.lede{font-size:21px;color:var(--muted);max-width:640px}
+a{color:var(--cold)}
+figure{margin:24px 0 8px}
+figcaption{font-family:var(--sans);font-size:14px;color:var(--muted);max-width:680px;margin-top:8px;line-height:1.45}
+svg{display:block;width:100%;height:auto;max-width:100%}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px}
+svg .grid{stroke:var(--line);stroke-width:1}
+svg .zero{stroke:var(--ink);stroke-width:1.5}
+svg .tick{fill:var(--muted);font:12px var(--sans)}
+svg .lab{fill:var(--ink);font:13px var(--sans)}
+svg .val{fill:var(--ink);font:700 13px var(--sans);font-variant-numeric:tabular-nums}
+svg .inv{fill:var(--surface);font:700 12px var(--sans)}
+svg .hotf{fill:var(--hot)} svg .coldf{fill:var(--cold)} svg .warmf{fill:var(--warm)} svg .mutedf{fill:var(--muted)} svg .tintf{fill:var(--tint)}
+.note{background:var(--note);padding:12px 16px;border-radius:6px;font-family:var(--sans);font-size:15px;line-height:1.5;max-width:680px;margin:16px 0}
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:18px 0}
+.strip div{border-top:4px solid var(--ink);padding-top:8px;font-family:var(--sans);font-size:14.5px;line-height:1.4}
+.strip b{display:block;font-size:16px;font-stretch:105%}
+.strip .num{font-size:26px;font-stretch:115%;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.strip .p{border-top-color:var(--cold)} .strip .e{border-top-color:var(--warm)} .strip .c{border-top-color:var(--hot)} .strip .r{border-top-color:var(--muted)}
+.crit{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2px;margin:18px 0;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.crit div{background:var(--surface);padding:14px 16px;font-family:var(--sans);font-size:15px;line-height:1.45}
+.crit b{display:block;font-size:17px;margin-bottom:4px}
+.crit .fig{font-size:24px;font-weight:800;font-stretch:115%;color:var(--hot);font-variant-numeric:tabular-nums}
+/* cooling hierarchy: a real order, so it is numbered */
+.ladder{display:grid;gap:10px;margin:18px 0;padding:0;list-style:none;counter-reset:rung}
+.rung{counter-increment:rung;display:grid;grid-template-columns:44px 1.1fr 1fr 1fr;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;font-family:var(--sans);font-size:14.5px;line-height:1.45}
+.rung::before{content:counter(rung);font-stretch:125%;font-weight:800;font-size:28px;line-height:1;color:var(--muted)}
+.rung .lvl{font-stretch:115%;font-weight:800;font-size:18px;display:block}
+.rung small{display:block;color:var(--muted);font-size:12.5px;margin-bottom:2px}
+.rung:nth-child(1){border-left:6px solid var(--cold)} .rung:nth-child(2){border-left:6px solid var(--cold)}
+.rung:nth-child(3){border-left:6px solid var(--warm)} .rung:nth-child(4){border-left:6px solid var(--warm)} .rung:nth-child(5){border-left:6px solid var(--hot)}
+@media (max-width:720px){.rung{grid-template-columns:1fr}}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:18px 0}
+table{border-collapse:collapse;font-family:var(--sans);font-size:14.5px;line-height:1.4;min-width:680px;background:var(--surface);width:100%}
+table.narrow{min-width:520px}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{font-weight:700;background:var(--tint)}
+td:first-child{font-weight:700}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.pass td{background:color-mix(in srgb, var(--ok) 10%, var(--surface))}
+.tag{display:inline-block;font-family:var(--mono);font-size:11.5px;line-height:1.5;padding:0 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;vertical-align:1px}
+.tag.sim{border-color:var(--ok);color:var(--ok)} .tag.est{border-color:var(--cold);color:var(--cold)}
+.tag.prx{border-color:var(--warm);color:var(--warm)} .tag.no{border-style:dashed} .tag.out{border-color:var(--hot);color:var(--hot)}
+ul.tight{padding-left:20px;max-width:680px;margin:0 0 14px}
+ul.tight li{margin-bottom:8px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+.two h3{margin-top:0}
+.sans-list{font-family:var(--sans);font-size:16px;line-height:1.5}
+code{font-family:var(--mono);font-size:.88em;background:var(--tint);padding:1px 4px;border-radius:3px;word-break:break-word}
+pre{font-family:var(--mono);font-size:13.5px;line-height:1.55;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--cold);border-radius:6px;padding:12px 14px;overflow-x:auto;margin:14px 0}
+pre code{background:none;padding:0;font-size:inherit;word-break:normal}
+pre .c{color:var(--muted)}
+/* route finder */
+.finder{display:grid;gap:14px}
+.finder label{font-family:var(--sans);font-weight:700;font-size:16px}
+.finder select{font:inherit;font-family:var(--sans);font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);max-width:100%}
+.route{display:grid;grid-template-columns:1fr 220px;gap:20px;font-family:var(--sans);font-size:15px;line-height:1.5}
+@media (max-width:720px){.route{grid-template-columns:1fr}}
+.route ol{margin:0;padding-left:22px;display:grid;gap:8px}
+.route aside{border-left:3px solid var(--line);padding-left:14px;color:var(--muted);font-size:14px;display:grid;gap:8px;align-content:start}
+.route aside b{color:var(--ink);display:block}
+.qs{columns:2 300px;column-gap:36px;font-family:var(--sans);font-size:16px;line-height:1.5}
+.qs h3{break-after:avoid;margin-top:0;padding-top:4px}
+.qs ul{padding-left:18px;margin:0 0 22px}
+.qs li{margin-bottom:7px;break-inside:avoid}
+footer{margin-top:64px;color:var(--muted);font-family:var(--sans);font-size:13px;max-width:680px}
+input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--cold);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}}
+@page{size:A4;margin:14mm 13mm}
+@media print{
+  :root:not(#print){--bg:#FFFFFF;--surface:#F3F6F8;--ink:#18212B;--muted:#4F5B66;--line:#C8D1D8;--cold:#2F5FB3;--warm:#C97F0E;--hot:#C2303B;--tint:#E4EAEF;--note:#FFF1D2;--ok:#2E7D4F;color-scheme:light}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{font-size:10.5pt;background:#fff}
+  h1{font-size:44pt} h2{font-size:17pt;margin:22pt 0 8pt}
+  h1,h2,h3{break-after:avoid}
+  figure,.panel,.crit,.note,.ladder,.rung,.strip,tr,pre{break-inside:avoid}
+  .scroll{overflow:visible} table{min-width:0;font-size:8.5pt}
+  .finder{display:none} .print-only{display:block}
+}
+.print-only{display:none}
+.print-only ol{font-family:var(--sans);font-size:14px;padding-left:20px;margin:4px 0 12px}
+</style>
+</head>
+<body>
+<main>
+
+<p class="kicker">Track 01 · part two · companion to “Hot under glass”</p>
+<h1>The heat<br>ledger</h1>
+<p class="lede">Overheating is one line in a longer account. This guide books the atrium’s heat, energy, daylight and carbon side by side, shows what the starter pack can already answer about each, and sets out how Rhino geometry is brought into the tool as JSON.</p>
+
+<div class="col">
+<h2>Why overheating is a sustainability question</h2>
+<p>A building that overheats rarely stays as it is. Someone eventually installs cooling, and then the problem has moved from comfort into energy and carbon for the rest of the building’s life. The sustainable fix keeps the atrium comfortable <b>without</b> buying that cooling, and without throwing away the daylight, winter warmth and embodied carbon the building already has. The building stays: its concrete, frame and glass are carbon already spent, and the most sustainable option starts from them.</p>
+<p>Every option is therefore assessed against four accounts at once.</p>
+</div>
+
+<div class="strip">
+  <div class="p"><b>People</b>Heat stress, sleepy afternoons, a space people avoid. The score and TM52 live here.</div>
+  <div class="e"><b>Energy</b>Cooling, fans and electric light added to make up for a bad passive design.</div>
+  <div class="c"><b>Carbon</b>Operational carbon from that energy, plus embodied carbon in every new screen, pane or panel.</div>
+  <div class="r"><b>Resilience</b>2050 summers are hotter, and a fix that only just passes today fails first.</div>
+</div>
+
+<div class="col">
+<h2>The cooling hierarchy</h2>
+<p>UK practice orders cooling measures from passive to active (the London Plan sets it out in policy SI 4). Each rung is used as far as it goes before the next one is considered, because each rung down costs more energy and carbon to run.</p>
+</div>
+<ol class="ladder">
+  <li class="rung"><div><span class="lvl">Keep heat out</span>The sun is stopped before it becomes heat inside.</div><div><small>In the sweep</small>Roof g-value, external roof screen</div><div><small>Beyond it</small>Less glass on the south roof slope, fritted or PV glass, a reflective roof finish</div></li>
+  <li class="rung"><div><span class="lvl">Store it, release it</span>The day’s heat is absorbed by the concrete and released at night.</div><div><small>In the sweep</small>Night ventilation (the existing 1,000 m² of exposed concrete is fixed)</div><div><small>Beyond it</small>More exposed mass, phase-change panels</div></li>
+  <li class="rung"><div><span class="lvl">Ventilate passively</span>Hot air is let out at the top and cooler air drawn in low down.</div><div><small>In the sweep</small>Day ventilation, as a fixed air-change rate</div><div><small>Beyond it</small>Real vent areas and heights, wind</div></li>
+  <li class="rung"><div><span class="lvl">Move the air</span>Air speed makes the same temperature feel cooler.</div><div><small>In the sweep</small>Nothing</div><div><small>Beyond it</small>Ceiling or large slow fans</div></li>
+  <li class="rung"><div><span class="lvl">Cool mechanically</span>The last resort, and the one a sustainable design avoids.</div><div><small>In the sweep</small>Nothing</div><div><small>Beyond it</small>A benchmark: the cooling energy the passive rungs save</div></li>
+</ol>
+
+<div class="col">
+<h2>The baseline ledger: where a week’s heat goes</h2>
+<p>For the existing atrium in the 2050 heatwave week, the starter app’s Diagnose section rebuilds the heat balance from the EnergyPlus results.</p>
+</div>
+
+<figure class="panel">
+<svg viewBox="0 0 680 262" role="img" aria-label="Weekly heat balance of the baseline atrium: solar 22.9 MWh in, internal gains 0.4 in, ventilation 23.2 out, glass 5.6 out, thermal mass and error 5.6 in">
+  <line x1="278" x2="278" y1="22" y2="214" class="grid"/><line x1="354" x2="354" y1="22" y2="214" class="grid"/>
+  <line x1="506" x2="506" y1="22" y2="214" class="grid"/><line x1="582" x2="582" y1="22" y2="214" class="grid"/>
+  <text x="278" y="232" class="tick" text-anchor="middle">−20</text><text x="354" y="232" class="tick" text-anchor="middle">−10</text>
+  <text x="430" y="232" class="tick" text-anchor="middle">0</text><text x="506" y="232" class="tick" text-anchor="middle">+10</text><text x="582" y="232" class="tick" text-anchor="middle">+20</text>
+  <text x="424" y="252" class="tick" text-anchor="end">← out of the atrium air</text>
+  <text x="436" y="252" class="tick">into the atrium air →</text>
+  <text x="672" y="232" class="tick" text-anchor="end">MWh / week</text>
+  <text x="12" y="45" class="lab">Solar through the glass</text>
+  <rect x="430" y="30" width="174" height="22" class="hotf"/><text x="598" y="46" class="inv" text-anchor="end">22.9</text>
+  <text x="12" y="85" class="lab">Internal gains</text>
+  <rect x="430" y="70" width="3" height="22" class="hotf"/><text x="439" y="86" class="val">0.4</text>
+  <text x="12" y="125" class="lab">Removed by ventilation</text>
+  <rect x="253.7" y="110" width="176.3" height="22" class="coldf"/><text x="260" y="126" class="inv">−23.2</text>
+  <text x="12" y="165" class="lab">Lost through the glass</text>
+  <rect x="387.4" y="150" width="42.6" height="22" class="coldf"/><text x="381" y="166" class="val" text-anchor="end">−5.6</text>
+  <text x="12" y="205" class="lab">From concrete + error</text>
+  <rect x="430" y="190" width="42.6" height="22" class="mutedf"/><text x="479" y="206" class="val">5.6</text>
+  <line x1="430" x2="430" y1="22" y2="214" class="zero"/>
+</svg>
+<figcaption>Solar is EnergyPlus output; internal gains are the model’s input (5 W/m², occupied hours). Ventilation and glass losses are rebuilt from the hourly operative temperature against outdoors, so they are proxies. The grey bar is what is left to balance the books: heat given back by the concrete plus the error of the rebuild.</figcaption>
+</figure>
+
+<figure class="panel">
+<svg viewBox="0 0 680 120" role="img" aria-label="Share of solar admitted by element: south-west roof slope 54 percent, north-east roof slope 34 percent, clerestories 12 percent">
+  <rect x="12" y="20" width="352" height="34" class="hotf"/><text x="22" y="42" class="inv">Roof SW slope · 54%</text>
+  <rect x="364" y="20" width="221" height="34" class="warmf"/><text x="374" y="42" class="inv">Roof NE slope · 34%</text>
+  <rect x="585" y="20" width="83" height="34" class="coldf"/><text x="593" y="42" class="inv">Clerest. 12%</text>
+  <text x="12" y="80" class="tick">626 m² of glass</text><text x="364" y="80" class="tick">407 m² of glass</text><text x="668" y="80" class="tick" text-anchor="end">4 faces, 321 m²</text>
+  <text x="12" y="104" class="tick">Solar through the atrium glass, split by Ladybug hot-week radiation (proxy).</text>
+</svg>
+<figcaption>The south-west slope is the single biggest heat collector. A move limited to that slope (fritting it, or replacing part of it with insulated panel) addresses over half the input. The clerestories contribute little heat and matter more for light.</figcaption>
+</figure>
+
+<div class="col">
+<h2>Beyond degree-hours: TM52</h2>
+<p>The sprint score answers “how much above 26 °C”. UK designers also use CIBSE TM52, which compares each hour with an <b>adaptive</b> limit. People accept warmer rooms after a run of warm days, so the limit rises with the running mean outdoor temperature: limit = 0.33 × T<sub>rm</sub> + 18.8 + 3 K. A room fails if it fails two of these three criteria.</p>
+</div>
+<div class="crit">
+  <div><b>1 · How often</b>Hours at least 1 K over the limit: no more than 3% of occupied hours.<br><span class="fig">49 h</span> baseline, against a limit of 2.1 h</div>
+  <div><b>2 · How bad on one day</b>Daily weighted exceedance (degrees over × hours): no more than 6.<br><span class="fig">99</span> on the worst day</div>
+  <div><b>3 · Never this hot</b>No hour more than 4 K over the limit.<br><span class="fig">13 K</span> over at the peak</div>
+</div>
+<div class="col">
+<p>Of the 3,125 simulated designs, <b>1,041 pass the sprint score</b> but only <b>241 pass TM52</b> over the hot week. The app computes TM52 from the hourly EnergyPlus results <span class="tag sim">derived</span>. Criterion 1 is meant for May to September, so one heatwave week makes it far stricter. The result is read as a stress test that separates comfortable passes from scraped ones, not as compliance.</p>
+</div>
+
+<div class="col">
+<h2>The trade-offs, in numbers</h2>
+<p>Two levers show the sustainability bargain clearly. Everything else is held at the baseline (g 0.6, U 2.8, 4 ACH by day, 1 at night, no screen). Every row is a design EnergyPlus actually simulated.</p>
+<h3>Night ventilation: diminishing returns, rising energy</h3>
+</div>
+<div class="scroll">
+<table class="narrow">
+<thead><tr><th>Night ACH</th><th class="n">Score, K·h <span class="tag sim">simulated</span></th><th class="n">Atrium before opening <span class="tag sim">derived</span></th><th class="n">Fan energy if mechanical <span class="tag prx">proxy</span></th></tr></thead>
+<tbody>
+<tr><td>0</td><td class="n">470</td><td class="n">34.9 °C</td><td class="n">0 kWh/wk</td></tr>
+<tr><td>1 (baseline)</td><td class="n">321</td><td class="n">27.8 °C</td><td class="n">882 kWh/wk</td></tr>
+<tr><td>3</td><td class="n">260</td><td class="n">24.5 °C</td><td class="n">2,646 kWh/wk</td></tr>
+<tr><td>6</td><td class="n">236</td><td class="n">23.2 °C</td><td class="n">5,292 kWh/wk</td></tr>
+<tr><td>10</td><td class="n">225</td><td class="n">22.6 °C</td><td class="n">8,820 kWh/wk</td></tr>
+</tbody>
+</table>
+</div>
+<div class="col"><h3>Roof screen: heat against daylight</h3></div>
+<div class="scroll">
+<table class="narrow">
+<thead><tr><th>Screen opacity</th><th class="n">Score, K·h <span class="tag sim">simulated</span></th><th class="n">TM52 criteria failed <span class="tag sim">derived</span></th><th class="n">Daylight factor <span class="tag prx">proxy</span></th></tr></thead>
+<tbody>
+<tr><td>0 (baseline)</td><td class="n">321</td><td class="n">3 of 3</td><td class="n">32.0%</td></tr>
+<tr><td>50%</td><td class="n">122</td><td class="n">3 of 3</td><td class="n">16.0%</td></tr>
+<tr><td>75%</td><td class="n">58</td><td class="n">3 of 3</td><td class="n">8.0%</td></tr>
+<tr class="pass"><td>90%</td><td class="n">35 · PASS</td><td class="n">2 of 3</td><td class="n">3.2%</td></tr>
+</tbody>
+</table>
+</div>
+<div class="col">
+<h2>What the current model can already answer</h2>
+<p>The starter app now ships a catalogue (<code>data/design_catalogue.json</code>) of 14 analyses and 18 interventions. Nothing in it is dropped. Each item is labelled by how far the current data can take it, and wherever possible a working mechanism sits behind the label.</p>
+</div>
+<div class="scroll">
+<table>
+<thead><tr><th>Label</th><th>What it means</th><th class="n">Items</th><th>Examples</th></tr></thead>
+<tbody>
+<tr><td><span class="tag sim">analysable now</span></td><td>Answered by the simulated sweep</td><td class="n">6</td><td>The five levers, mechanical night purge</td></tr>
+<tr><td><span class="tag est">partial</span></td><td>Exact method, limited by the data</td><td class="n">3</td><td>TM52 (one week only), night-flush check, cost and carbon (rates still to source)</td></tr>
+<tr><td><span class="tag prx">approximation</span></td><td>Simple physics on the existing results, labelled in the app</td><td class="n">14</td><td>Heat balance, solar by element, stack airflow, winter solar, fans, less roof glass, PV frit</td></tr>
+<tr><td><span class="tag no">needs new simulation</span></td><td>Kept on the list with what it would need</td><td class="n">9</td><td>Stratification, more thermal mass, other weather years, a whole summer, internal blinds</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="col"><h3>Interventions outside the sweep, applied to the baseline</h3></div>
+<div class="scroll">
+<table>
+<thead><tr><th>Move</th><th class="n">Score, K·h</th><th>How the app estimates it</th><th>What it trades</th></tr></thead>
+<tbody>
+<tr><td>Half the SW roof glass becomes insulated panel</td><td class="n">≈ 192 <span class="tag prx">approx</span></td><td>Converted to an equivalent g using that slope’s share of the sun, then read from the sweep</td><td>Daylight, embodied carbon of new panels</td></tr>
+<tr><td>40% PV frit on the roof glass</td><td class="n">≈ 155 <span class="tag prx">approx</span></td><td>Same equivalent g, plus yield from the Ladybug annual radiation</td><td>Daylight; earns ≈ 61 MWh a year of electricity</td></tr>
+<tr><td>Ceiling fans, 0.9 m/s</td><td class="n">≈ 225 felt <span class="tag prx">approx</span></td><td>ASHRAE 55 allowance: air speed lets people accept 1.8 K more</td><td>Fan energy, noise; the air is no cooler</td></tr>
+<tr><td>Internal gains 5 → 2 W/m²</td><td class="n">≈ 315 <span class="tag prx">approx</span></td><td>Steady-state shift, an upper bound</td><td>Almost nothing, because there is almost nothing to gain</td></tr>
+<tr><td>Dynamic or moving screen</td><td class="n">–</td><td>The app can approximate it</td><td><span class="tag out">ruled out by the brief</span> No moving louvres this year</td></tr>
+</tbody>
+</table>
+</div>
+<div class="col">
+<h2>Simulated, estimated or assumed: the labels in the app</h2>
+<p>The first guide asked every number to say where it came from. The app now stamps each one.</p>
+</div>
+<div class="scroll">
+<table class="narrow">
+<thead><tr><th>Tag in the app</th><th>Kind</th><th>Trust it for</th></tr></thead>
+<tbody>
+<tr><td>EnergyPlus</td><td>Simulated</td><td>Absolute values on grid designs; ±4.8 K·h typical between them</td></tr>
+<tr><td><span class="tag sim">derived</span></td><td>Simulated, post-processed (TM52, night flush)</td><td>Same as EnergyPlus, since it is the same hourly data</td></tr>
+<tr><td><span class="tag est">proxy</span></td><td>Estimated with editable assumptions (daylight, winter, stack, cooling, fans)</td><td>Comparing options, with any changed assumption stated</td></tr>
+<tr><td><span class="tag prx">approx</span></td><td>Assumed: an intervention outside the sweep</td><td>Ranking ideas before they are simulated</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="col">
+<h2>Rhino to JSON: how geometry reaches the tool</h2>
+<p>The web app never reads Rhino. It reads JSON files in <code>data/</code>, and three small scripts write them. Each one is run from Rhino 8 (<b>ScriptEditor</b> → open the file → Run). All three convert model units to metres and keep Rhino coordinates; true north stays 60.9° anticlockwise from +Y.</p>
+</div>
+
+<figure class="panel">
+<svg viewBox="0 0 680 236" role="img" aria-label="Data flow from Rhino through three export scripts into JSON files, the EnergyPlus sweep and the web app">
+  <rect x="10" y="78" width="130" height="78" rx="6" class="tintf"/>
+  <text x="75" y="110" class="val" text-anchor="middle">Rhino 8</text><text x="75" y="128" class="tick" text-anchor="middle">model + GH script</text>
+  <rect x="190" y="14" width="214" height="50" rx="6" class="tintf"/><text x="200" y="35" class="lab">export_from_grasshopper.py</text><text x="200" y="53" class="tick">official, needs GH solved</text>
+  <rect x="190" y="92" width="214" height="50" rx="6" class="tintf"/><text x="200" y="113" class="lab">export_atrium_geometry.py</text><text x="200" y="131" class="tick">the atrium zone, from layers</text>
+  <rect x="190" y="170" width="214" height="50" rx="6" class="tintf"/><text x="200" y="191" class="lab">export_selection_to_json.py</text><text x="200" y="209" class="tick">anything selected, view only</text>
+  <rect x="430" y="14" width="120" height="128" rx="6" class="tintf"/><text x="440" y="36" class="lab">sweep_inputs</text><text x="440" y="54" class="lab">atrium_geometry</text>
+  <text x="440" y="80" class="tick">→ sweep_atrium.py</text><text x="440" y="96" class="tick">EnergyPlus, slow</text><text x="440" y="124" class="lab">sweep.json</text>
+  <rect x="430" y="170" width="120" height="50" rx="6" class="tintf"/><text x="440" y="191" class="lab">context.json</text><text x="440" y="209" class="tick">+ baseline, climate…</text>
+  <rect x="590" y="78" width="80" height="78" rx="6" class="coldf"/><text x="630" y="113" class="inv" text-anchor="middle">web</text><text x="630" y="129" class="inv" text-anchor="middle">app</text>
+  <path d="M140,117 L190,39 M140,117 L190,117 M140,117 L190,195 M404,39 L430,39 M404,117 L430,60 M404,195 L430,195 M550,117 L590,117 M550,195 L590,140" stroke="var(--muted)" stroke-width="1.5" fill="none"/>
+</svg>
+<figcaption>Two of the routes feed the EnergyPlus sweep and change the scores. The third only changes what the 3D view shows.</figcaption>
+</figure>
+
+<div class="col"><h3>Atrium tagging</h3>
+<p><code>export_atrium_geometry.py</code> reads roles from layers. Its first run offers to create them. Exposed and Mass faces together must join into one closed volume.</p></div>
+<div class="scroll">
+<table class="narrow">
+<thead><tr><th>Layer</th><th>Contents</th><th>Becomes in EnergyPlus</th></tr></thead>
+<tbody>
+<tr><td><code>ATRIUM::Exposed</code></td><td>Faces touching outside air: roof slopes, clerestories, gables</td><td>Outdoor surfaces, glazing allowed</td></tr>
+<tr><td><code>ATRIUM::Mass</code></td><td>Floor and walls to the rest of the building</td><td>Adiabatic thermal mass (downward faces become the floor)</td></tr>
+<tr><td><code>ATRIUM::Glazing</code></td><td>Glass panes lying on Exposed faces, within 0.5 m</td><td>Glazed area on the face it sits on</td></tr>
+</tbody>
+</table>
+</div>
+<div class="col">
+<p>Objects that must stay on their own layer in the shared RhinoSync model can carry a key instead: <code>atrium_role</code> = <code>exposed</code>, <code>mass</code> or <code>glazing</code>, set under <b>Properties → Attribute User Text</b>. A key always takes precedence over the layer.</p>
+<p>The script writes <code>tools/inputs/atrium_geometry.json</code>, which the sweep uses in place of its built-in box, and updates the floor, volume and glass areas in <code>data/baseline.json</code>, which the app’s proxies use. One face looks like this (illustrative values):</p>
+</div>
+<pre><code>{ "name": "F09_roof", "type": "roof", "bc": "outdoors",
+  "vertices": [[-11.4,-9.74,21.26],[26.95,-9.74,21.26],[26.95,6.29,22.97],[-11.4,6.29,22.97]],
+  "area_m2": 618.2, "glazing_m2": 612.0 }</code></pre>
+
+<h3>Routes by type of change</h3>
+<div class="panel finder">
+  <label for="changed">Change made</label>
+  <select id="changed">
+    <option value="none">nothing in Rhino: a new metric or chart</option>
+    <option value="view">surrounding buildings, for the 3D view only</option>
+    <option value="shade">surrounding buildings, and they should shade the simulation</option>
+    <option value="atrium" selected>the atrium’s shape, glass layout or exposed faces</option>
+    <option value="study">a Ladybug study in Grasshopper</option>
+    <option value="lever">nothing in Rhino: a new lever (mass, gains, vents)</option>
+  </select>
+  <div class="route" aria-live="polite"><ol id="steps"></ol><aside id="meta"></aside></div>
+</div>
+<div class="print-only" id="allroutes"></div>
+
+<div class="col"><h3>Running the sweep</h3></div>
+<pre><code><span class="c"># Mac: quick test (32 designs, about a minute), then the full grid</span>
+~/ladybug_tools/python/bin/python3 tools/sweep_atrium.py --quick
+~/ladybug_tools/python/bin/python3 tools/sweep_atrium.py --workers 6
+
+<span class="c"># Windows</span>
+"C:\Program Files\ladybug_tools\python\python.exe" tools\sweep_atrium.py --quick</code></pre>
+
+<div class="col">
+<h3>Conditions for a sweep</h3>
+<ul class="tight">
+<li><b><code>data/sweep.json</code> is overwritten by every run,</b> including <code>--quick</code>, so a copy is kept beforehand.</li>
+<li><b>Group 0 and the FF components stay unedited.</b> The export scripts only read from them.</li>
+<li><b>Faces must be flat.</b> Curved glass is split into planar panels; holes in faces are ignored and reported by the script.</li>
+<li><b>The baseline card goes stale.</b> After a new atrium export, the baseline EnergyPlus score in the app belongs to the old geometry until the Grasshopper export is re-run.</li>
+<li><b>Run time.</b> The full grid took about 25 minutes on 14 cores; a laptop takes well over an hour. Every new lever with five levels multiplies the run count by five.</li>
+<li><b>Reverting.</b> Deleting <code>atrium_geometry.json</code> returns the sweep to the original box.</li>
+</ul>
+</div>
+
+<h2>Questions to take into the day</h2>
+<div class="qs">
+  <h3>The accounts</h3>
+  <ul>
+    <li>Which account does the best option draw on: daylight, winter heat, energy or carbon?</li>
+    <li>Does a passing design scrape through the score but fail TM52?</li>
+    <li>Would air conditioning still be added to the proposed solution, and if not, why not?</li>
+  </ul>
+  <h3>The hierarchy</h3>
+  <ul>
+    <li>Have the top rungs been used before fans or cooling are considered?</li>
+    <li>Which roof slope is the move aimed at, and why that one?</li>
+    <li>Is the night purge passive, or does it need fans? What does that cost a week?</li>
+  </ul>
+  <h3>The model</h3>
+  <ul>
+    <li>Which numbers are simulated, derived, proxy or approximate?</li>
+    <li>Which approximation most needs replacing with a simulation?</li>
+    <li>After a geometry change, was the sweep re-run, or are old scores being quoted?</li>
+  </ul>
+</div>
+
+<footer>Figures from the Track 01 starter pack: EnergyPlus sweep (3,125 designs, 2050 crude-morph hot week, 14–20 June) and the app’s Diagnose mechanisms. Heat-balance flows other than solar, the daylight and winter figures, fan energy and all “approx” rows are estimates for comparing options, not design data. TM52 per CIBSE TM52 (2013), Category II, over one week only.</footer>
+</main>
+
+<script>
+(function(){
+  var R = {
+    none: { steps: ['Write the calculation in <code>js/mechanisms.js</code> (or <code>js/model.js</code>).', 'Register it in <code>H.extraMetrics()</code> with a label, unit, better direction and source tag.', 'Refresh the browser. It appears in the explorer, trade-offs and sensitivity charts.'],
+      time: 'Minutes', scores: 'No: it is computed from existing results', tag: 'derived or proxy' },
+    view: { steps: ['Select the buildings in Rhino.', 'Run <code>tools/export_selection_to_json.py</code> and choose <b>Add</b> (or <b>Replace</b>).', 'Refresh the browser. A backup is kept in <code>data/context.backup.json</code>.'],
+      time: 'Minutes', scores: 'No: the simulation still sees the old context', tag: 'view only' },
+    shade: { steps: ['Make sure the Grasshopper loader picks up the new buildings, and let the script solve.', 'Run <code>tools/export_from_grasshopper.py</code> (IronPython 2).', 'Copy <code>data/sweep.json</code>, then run <code>sweep_atrium.py --quick</code>.', 'If it runs cleanly, run the full sweep.'],
+      time: 'An hour or more', scores: 'Yes, after the sweep', tag: 'simulated' },
+    atrium: { steps: ['Put faces on <code>ATRIUM::Exposed</code>, <code>ATRIUM::Mass</code> and <code>ATRIUM::Glazing</code>, or give them an <code>atrium_role</code> key.', 'Run <code>tools/export_atrium_geometry.py</code> and read its warnings.', 'Copy <code>data/sweep.json</code>, then run <code>sweep_atrium.py --quick</code>.', 'Run the full sweep, then refresh the browser.'],
+      time: 'An hour or more', scores: 'Yes, after the sweep. Proxies update straight away', tag: 'simulated' },
+    study: { steps: ['Add the study component’s GUID to the <code>IR</code> list in <code>tools/export_from_grasshopper.py</code>.', 'Run the export from Rhino.', 'Add a matching entry to <code>STUDIES</code> in <code>js/app.js</code> so the 3D view can show it.'],
+      time: 'Under an hour', scores: 'No: radiation is shown, not scored', tag: 'simulated (Ladybug)' },
+    lever: { steps: ['Add the lever and its levels to <code>LEVERS</code> in <code>tools/sweep_atrium.py</code>, and apply it in <code>build_model()</code>.', 'Add its label to <code>H.LEVER_META</code> in <code>js/model.js</code> and its baseline value to <code>baseline.json</code>.', 'Test with <code>--quick</code>, then run the full sweep. Five levels multiply the run count by five.'],
+      time: 'Hours of computing', scores: 'Yes, after the sweep', tag: 'simulated' }
+  };
+  var sel = document.getElementById('changed');
+  function show(){
+    var r = R[sel.value];
+    document.getElementById('steps').innerHTML = r.steps.map(function(s){ return '<li>' + s + '</li>'; }).join('');
+    document.getElementById('meta').innerHTML = '<div><b>Time</b>' + r.time + '</div><div><b>Changes the scores?</b>' + r.scores + '</div><div><b>Result tag</b>' + r.tag + '</div>';
+  }
+  sel.addEventListener('change', show); show();
+  // printed copies get every route, since nobody can use the picker on paper
+  document.getElementById('allroutes').innerHTML = Array.prototype.map.call(sel.options, function(o){
+    var r = R[o.value];
+    return '<h3>Change made: ' + o.textContent + '</h3><ol>' + r.steps.map(function(s){ return '<li>' + s + '</li>'; }).join('') +
+      '</ol><p class="sans" style="font-size:13px">Time: ' + r.time + ' · Changes the scores? ' + r.scores + ' · Tag: ' + r.tag + '</p>';
+  }).join('');
+})();
+</script>
+</body>
+</html>

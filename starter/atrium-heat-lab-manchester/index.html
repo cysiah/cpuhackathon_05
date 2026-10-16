@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--BUILD:STRIP-START-->
+<title>Atrium Heat Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="js/model.js"></script>
+<script src="js/mechanisms.js"></script>
+<script src="js/viewer3d.js"></script>
+<script src="js/app.js"></script>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <span class="eyebrow">Forecast Factory 00 · Track 01 starter app</span>
+  <h1>Atrium Heat Lab</h1>
+  <p class="lede">The Geoffrey Manton atrium in a 2050 heatwave: what drives the overheating, which levers move it, and what each choice costs.</p>
+  <div class="chips">
+    <span class="chip">Manchester · 53.35° N</span>
+    <span class="chip warn">2050 +1.5 °C crude projection</span>
+    <span class="chip">Hot week 14–20 June</span>
+    <span class="chip accent" id="evalid">EVAL ID</span>
+  </div>
+</header>
+
+<nav class="sectionbar" aria-label="Sections">
+  <a href="#overview">Overview</a><a href="#climate">Climate</a><a href="#heat">Where heat enters</a>
+  <a href="#explore">Explore designs</a><a href="#diagnose">Diagnose</a><a href="#tradeoffs">Trade-offs</a><a href="#sensitivity">Sensitivity</a><a href="#assumptions">Assumptions</a>
+</nav>
+
+<section id="overview">
+  <div class="section-head">
+    <span class="eyebrow">Baseline, existing building</span>
+    <h2>The atrium overheats badly in a 2050 heatwave</h2>
+    <p class="muted">Scores are occupied degree-hours of operative temperature above 26 °C (08:00–18:00) during the hot week, from the official EnergyPlus model in the Grasshopper script (the E+ SCORE CARD). Lower is better: PASS ≤ 42, MARGINAL ≤ 150, OVERHEATING ≤ 400, SEVERE above.</p>
+  </div>
+  <div class="summary" id="summary"><p class="loading">Loading analysis data…</p></div>
+</section>
+
+<section id="climate">
+  <div class="section-head">
+    <span class="eyebrow">1 · Climate</span>
+    <h2>Outdoors gets warmer; indoors gets much hotter</h2>
+    <p class="muted">The 2050 file shifts present-day dry-bulb temperatures by +1.5 °C, adds +0.5 °C at night and a heatwave pulse of up to +4 °C centred on 17 June. Sun, wind and cloud are unchanged.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Every hour of the year</h3>
+      <div class="seg" id="climate-mode" role="group" aria-label="Year shown">
+        <button type="button" data-mode="present">Present</button><button type="button" data-mode="future">2050</button><button type="button" data-mode="diff">Difference</button>
+      </div>
+    </div>
+    <canvas class="heatmap" id="heatmap" width="365" height="24" aria-label="Hourly dry-bulb temperature heat map, days across, hours up"></canvas>
+    <div class="legend"><span class="ramp" id="heat-ramp"></span><span id="heat-range"></span><span>Jan → Dec, midnight at the bottom · box = hot week</span></div>
+    <div class="scroll-x"><table id="exposure"></table></div>
+  </div>
+  <div class="panel">
+    <h3>The hot week: outdoor air vs the atrium</h3>
+    <div class="chart-box tall"><canvas id="hotweek"></canvas></div>
+    <p class="muted" style="font-size:.85rem">Operative temperature combines air and surface temperatures, which is what people feel. The screening line is the instant preview model in the Grasshopper script: it reads high.</p>
+  </div>
+</section>
+
+<section id="heat">
+  <div class="section-head">
+    <span class="eyebrow">2 · Building</span>
+    <h2>Where the heat comes in</h2>
+    <p class="muted">Ladybug incident radiation on the outward-facing envelope, shaded by the surrounding city. Hover a surface for its value.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <div class="seg" id="rad-mode" role="group" aria-label="Radiation study">
+        <button type="button" data-key="hot_week">Hot week</button><button type="button" data-key="annual">Annual</button><button type="button" data-key="benefit_present">Benefit/harm today</button><button type="button" data-key="benefit_future">Benefit/harm 2050</button>
+      </div>
+      <div class="legend"><span class="ramp" id="rad-ramp"></span><span id="rad-range"></span></div>
+    </div>
+    <div class="viewer" id="viewer"><span class="hint">Drag to orbit · scroll to zoom · hover a surface</span></div>
+    <p id="rad-insight"></p>
+  </div>
+  <div class="panel">
+    <h3>Solar energy by building element</h3>
+    <div class="chart-box tall"><canvas id="radbars"></canvas></div>
+  </div>
+</section>
+
+<section id="explore">
+  <div class="section-head">
+    <span class="eyebrow">3 · Design space</span>
+    <h2>Explore 3,125 simulated designs</h2>
+    <p class="muted">Every combination of the five levers below was simulated in EnergyPlus. Between grid points the app interpolates and tells you how far off that can be.</p>
+  </div>
+  <div class="explorer">
+    <div class="panel">
+      <h3>Levers</h3>
+      <div id="levers" style="display:grid;gap:14px"></div>
+      <div class="row">
+        <button class="btn" type="button" id="btn-base">Reset to baseline</button>
+        <button class="btn" type="button" id="btn-snap">Snap to nearest simulated</button>
+        <button class="btn" type="button" id="btn-best">Best score with daylight ≥ 5%</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="fidelity" id="fidelity"></div>
+      <div class="metrics" id="design-metrics"></div>
+      <div class="chart-box"><canvas id="designweek"></canvas></div>
+      <h3>What this design asks of the building</h3>
+      <ul class="flags" id="flags"></ul>
+    </div>
+  </div>
+</section>
+
+<section id="diagnose">
+  <div class="section-head">
+    <span class="eyebrow">3b · Diagnose and extend</span>
+    <h2>Why this design overheats, and what else could help</h2>
+    <p class="muted">Built from the results we already have, with no new simulation. Each number is tagged:
+      <span class="tag derived">derived</span> EnergyPlus hourly results, post-processed ·
+      <span class="tag proxy">proxy</span> simple physics on those results ·
+      <span class="tag approx">approx</span> an intervention outside the simulated grid. Follows the design in the explorer above.</p>
+  </div>
+  <div class="assume">
+    <div class="panel">
+      <h3>Where the heat goes <span class="tag proxy">proxy</span></h3>
+      <div class="chart-box"><canvas id="heatbal"></canvas></div>
+      <p class="note" id="hb-note"></p>
+      <h3>Solar admitted by element <span class="tag proxy">proxy</span></h3>
+      <table id="solar-el"></table>
+    </div>
+    <div class="panel">
+      <h3>CIBSE TM52, hot week <span class="tag derived">derived</span></h3>
+      <table id="tm52"></table>
+      <p class="note" id="tm52-note"></p>
+      <h3>Night flush <span class="tag derived">derived</span></h3>
+      <p class="note" id="flush"></p>
+      <h3>Cost and carbon <span class="tag">rates needed</span></h3>
+      <p class="note" id="costcarbon"></p>
+    </div>
+    <div class="panel">
+      <h3>Interventions outside the sweep <span class="tag approx">approx</span></h3>
+      <div id="extras" style="display:grid;gap:12px"></div>
+      <table id="extras-out"></table>
+      <ul class="flags" id="extras-notes"></ul>
+      <div class="row"><button class="btn" type="button" id="btn-extras-reset">Reset extras</button></div>
+    </div>
+  </div>
+</section>
+
+<section id="tradeoffs">
+  <div class="section-head">
+    <span class="eyebrow">4 · Trade-offs</span>
+    <h2>No free lunch: the best overheating score costs daylight</h2>
+    <p class="muted">Each dot is one EnergyPlus run. Pick any two outcomes; the line marks the designs that cannot be improved on one axis without losing on the other.</p>
+  </div>
+  <div class="panel">
+    <div class="axis-pickers">
+      <label>X <select id="ax-x"></select></label>
+      <label>Y <select id="ax-y"></select></label>
+      <label>Colour <select id="ax-c"></select></label>
+    </div>
+    <div class="chart-box tall"><canvas id="tradeoff"></canvas></div>
+    <div class="legend"><span class="ramp" id="c-ramp"></span><span id="c-range"></span></div>
+    <p class="muted" id="front-note" style="font-size:.85rem"></p>
+  </div>
+</section>
+
+<section id="sensitivity">
+  <div class="section-head">
+    <span class="eyebrow">5 · Sensitivity</span>
+    <h2>Which levers matter, and where they interact</h2>
+  </div>
+  <div class="panel">
+    <div class="axis-pickers"><label>Outcome <select id="sens-metric"></select></label></div>
+    <div class="chart-box"><canvas id="tornado"></canvas></div>
+    <p id="interaction"></p>
+  </div>
+  <div class="smalls" id="mains"></div>
+</section>
+
+<section id="assumptions">
+  <div class="section-head">
+    <span class="eyebrow">6 · Assumptions and limits</span>
+    <h2>What this tool does not know</h2>
+    <p class="muted">Change a proxy assumption and every chart updates. EnergyPlus results do not change; to change those, re-run the sweep (tools/sweep_atrium.py).</p>
+  </div>
+  <div class="assume">
+    <div class="panel">
+      <h3>Interpolation error, measured</h3>
+      <p id="validation" style="font-size:.9rem"></p>
+      <h3>EnergyPlus model</h3>
+      <ul>
+        <li>One well-mixed zone: no stratification, so the upper galleries will be hotter than shown.</li>
+        <li>Walls and floor below 19.35 m exchange no heat with the rest of the building; 1,000 m² of exposed concrete adds thermal mass.</li>
+        <li>Ventilation is a fixed air-change rate per hour, not wind- or stack-driven airflow.</li>
+        <li>The roof screen is a uniform horizontal plane with constant transmittance, not a real product or kinetic system.</li>
+        <li>One crude 2050 heatwave week. Other weeks, years and climate models will give different numbers.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Proxy assumptions (editable)</h3>
+      <div class="param" id="params"></div>
+      <ul>
+        <li>Daylight: BRE average daylight factor for roof lights. No glare, no sun patches, no spatial distribution.</li>
+        <li>Winter loss: conduction through the atrium glazing only, present-day weather, screen assumed retracted. Lost winter solar gain from low g-values is ignored.</li>
+        <li>Vent opening: stack effect only, equal high and low openings, no wind.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Not modelled at all</h3>
+      <ul>
+        <li>Cost, embodied carbon and maintenance of any intervention.</li>
+        <li>Occupant behaviour and clothing. Adaptive comfort (TM52) and air speed are approximated in Diagnose.</li>
+        <li>Electric lighting energy that a darker atrium would need.</li>
+        <li>Acoustics, rain, security and fire strategy for large openings.</li>
+        <li>Uncertainty in the weather itself.</li>
+      </ul>
+      <h3>Where a Track 01 team could take this</h3>
+      <ul>
+        <li>Add an objective (carbon, cost, daylight from Radiance) and show the new Pareto front.</li>
+        <li>Replace the grid with active sampling where the score changes fastest.</li>
+        <li>Show uncertainty: run more weather years or climate models and plot score ranges.</li>
+        <li>Explain the system: connect inputs to heat flows (solar, ventilation, mass) for a chosen hour.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="catalogue-sec" style="padding-top:0">
+  <div class="panel">
+    <h3>Analysis and intervention catalogue</h3>
+    <p class="muted note" id="catalogue-note"></p>
+    <div class="table-wrap"><table id="catalogue"></table></div>
+  </div>
+</section>
+
+<footer>
+  <span>Data: Ladybug Tools 1.10 + EnergyPlus 25.2 via the Forecast Factory GM atrium script. Weather: OneBuilding TMYx, crude 2050 morph.</span>
+  <span>Template code is yours to change. Keep the honesty: say what each number is, where it came from, and how wrong it might be.</span>
+</footer>
+</div>
+<!--BUILD:STRIP-END-->
+</body>
+</html>

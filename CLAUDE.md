@@ -24,6 +24,15 @@ Deliverables:
 - The tool is **open-ended**: new parameters and data can be added later. Prefer data-driven layers over hard-coded ones.
 - The two lenses (architect vs developer / estates manager) care about different things. Spots and areas, not rooms.
 
+## Repo state (16 Oct, afternoon)
+
+- The repo holds the **site** (root `index.html`, the "Heat Headroom" one-pager from another session, now with a **Floorplates** section that embeds our tool) and the **tool** (`app/`). See `README.md`.
+- `starter/atrium-heat-lab-manchester/` is the newer organisers' pack (the zip). It has hourly results for all 3,125 runs, real hot-week weather, the atrium geometry, and the guide "The heat ledger". Its numbers were checked and reproduce (A29).
+- The tool runs on **real weather, real EnergyPlus results and real sun**; floor outlines, 5F level, glass transmittance etc. are **placeholders** listed in `ASSUMPTIONS.md`.
+- `docs/CRITIQUE.md` is the critical reading of the starter: 800 of 1,041 passing designs fail TM52; the score is mostly radiant sun (operative 321 vs air 127 K.h); only 9 passing designs keep daylight above 10%.
+- The Heat Headroom framing in the site's hero, headroom and pitch sections is **parked**; it has not been rewritten.
+- Rebuild order: `tools/build_real_data.py`, `tools/assumptions_to_md.py`, `tools/bundle_app_data.py`. Tests: `node tests/test_model.js`.
+
 ## Current direction (being explored)
 
 Floor-plan heatmaps on **isolated GF and 5F floorplates** (not the single atrium box). The areas will later be classified as **enclosed, open or void**. Parameter layers you can cross-reference:

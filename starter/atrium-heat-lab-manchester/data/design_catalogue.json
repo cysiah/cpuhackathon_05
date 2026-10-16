@@ -1,0 +1,769 @@
+{
+  "about": "Catalogue of analyses and interventions for the GM atrium overheating problem: what the app already covers and what is missing. status: in_sweep = simulated in data/sweep.json; proxy = estimated in js/model.js; missing = not modelled. how: e+ = add to tools/sweep_atrium.py and re-run; js = compute in the browser from existing data; external = needs another engine (Radiance, CFD). Ranges are suggested starting points, costs and carbon are deliberately null until sourced. now.level: yes = answered by the simulated results; partial = exact method but limited scope; approx = simple physics on current results (labelled in the app); no = needs new simulation or data, kept listed. Mechanisms live in js/mechanisms.js.",
+  "version": 1,
+  "analyses": [
+    {
+      "id": "heat_balance",
+      "name": "Hourly heat balance of the atrium",
+      "question": "Is overheating driven by solar gain, too little ventilation, or concrete that never cools at night - and at which hours?",
+      "status": "missing",
+      "how": "e+",
+      "priority": 1,
+      "outputs": [
+        "Zone Windows Total Transmitted Solar Radiation Energy",
+        "Zone Infiltration Sensible Heat Gain Energy",
+        "Zone Infiltration Sensible Heat Loss Energy",
+        "Surface Inside Face Conduction Heat Transfer Energy",
+        "Surface Window Heat Gain Energy",
+        "Surface Window Heat Loss Energy",
+        "Zone Electric Equipment Convective Heating Energy"
+      ],
+      "app_view": "Stacked hourly bars for the hot week; pick a design and an hour to see where the heat goes",
+      "informs": [
+        "shading",
+        "ventilation",
+        "thermal_mass"
+      ],
+      "now": {
+        "level": "approx",
+        "how": "Weekly balance rebuilt from results: solar = EnergyPlus, gains = model input, ventilation and glass conduction from hourly operative vs outdoor, remainder = thermal mass + error (H.heatBalance)",
+        "where": "Diagnose",
+        "limits": "Operative stands in for air temperature; opaque panels ignored; weekly totals only. Exact per-flow values need the E+ outputs listed above."
+      }
+    },
+    {
+      "id": "solar_by_element",
+      "name": "Transmitted solar per glazing element",
+      "question": "Which part of the roof or clerestory lets in most heat - where should shading go first?",
+      "status": "missing",
+      "how": "e+",
+      "priority": 1,
+      "outputs": [
+        "Surface Window Transmitted Solar Radiation Energy (per aperture)"
+      ],
+      "notes": "Name apertures by group (RS, RN, S, N, E, W) in build_model so results can be summed per element. The Ladybug radiation view shows exposure, not heat admitted.",
+      "informs": [
+        "roof_glazing_ratio",
+        "dynamic_external_shading",
+        "fritted_or_pv_glazing"
+      ],
+      "now": {
+        "level": "approx",
+        "how": "EnergyPlus transmitted solar split by each element's share of Ladybug hot-week incident radiation (H.solarByElement)",
+        "where": "Diagnose",
+        "limits": "Same g on every element; angle-dependent transmittance ignored. Exact split needs per-aperture E+ output."
+      }
+    },
+    {
+      "id": "night_flush_effectiveness",
+      "name": "Night cooling of the thermal mass",
+      "question": "Does the concrete actually cool overnight, or is night ventilation wasted?",
+      "status": "missing",
+      "how": "e+",
+      "priority": 2,
+      "outputs": [
+        "Surface Inside Face Temperature (internal mass, floor, mass walls) at 07:00 and 18:00"
+      ],
+      "informs": [
+        "ach_night",
+        "thermal_mass"
+      ],
+      "now": {
+        "level": "partial",
+        "how": "Operative before opening and overnight drop from EnergyPlus hourly results (H.nightFlush; metric \"Atrium before opening\")",
+        "where": "Diagnose + metric in Explore, Trade-offs, Sensitivity",
+        "limits": "Concrete surface temperatures are not exported, so operative is used."
+      }
+    },
+    {
+      "id": "tm52",
+      "name": "CIBSE TM52 adaptive overheating criteria",
+      "question": "Does the design pass the UK standard test (hours of exceedance, daily weighted exceedance, upper limit)?",
+      "status": "missing",
+      "how": "js",
+      "priority": 1,
+      "inputs": [
+        "sweep.json grid[].operative (hourly)",
+        "climate.json dry_bulb.future for running mean temperature"
+      ],
+      "notes": "Possible now for the hot week; a real TM52 test needs May-September, see summer_season.",
+      "informs": [
+        "all"
+      ],
+      "now": {
+        "level": "partial",
+        "how": "All three TM52 criteria from EnergyPlus hourly operative, Category II, running mean from the 2050 file (H.tm52; metric \"TM52 criteria failed\")",
+        "where": "Diagnose + metric in Explore, Trade-offs, Sensitivity",
+        "limits": "Hot week only; criterion 1 is defined over May–September, so this is a stress test, not a compliance result."
+      }
+    },
+    {
+      "id": "summer_season",
+      "name": "Whole cooling season instead of one heatwave week",
+      "question": "Does a design that survives the peak week still overheat across the summer?",
+      "status": "missing",
+      "how": "e+",
+      "priority": 2,
+      "inputs": [
+        "RunPeriod 1 May - 30 Sep in sim_parameter()"
+      ],
+      "notes": "About 20x longer per run; sample the design space rather than the full grid.",
+      "now": {
+        "level": "no",
+        "how": null,
+        "where": null,
+        "limits": "E+ results cover one week. Needs a longer RunPeriod in sweep_atrium.py (climate.json already has 8760 h outdoor data)."
+      }
+    },
+    {
+      "id": "climate_robustness",
+      "name": "Several weather files and climate projections",
+      "question": "Is the best design still best in other years and under real 2050/2080 projections?",
+      "status": "missing",
+      "how": "e+",
+      "priority": 2,
+      "inputs": [
+        "CIBSE DSY1-3 or UKCP18-morphed EPWs for Manchester",
+        "present-day TMYx as reference"
+      ],
+      "app_view": "Score ranges (min-max over weather files) instead of single values",
+      "now": {
+        "level": "no",
+        "how": null,
+        "where": null,
+        "limits": "One weather file in the sweep. Needs re-running with more EPWs."
+      }
+    },
+    {
+      "id": "stratification",
+      "name": "Vertical temperature stratification",
+      "question": "How much hotter are the upper galleries than the well-mixed average?",
+      "status": "missing",
+      "how": "e+",
+      "priority": 2,
+      "notes": "Split the atrium into 3-4 stacked zones joined by air walls, or use RoomAirModel; check a few designs with CFD (external).",
+      "informs": [
+        "high_level_vents",
+        "occupied_zone_location"
+      ],
+      "now": {
+        "level": "no",
+        "how": null,
+        "where": null,
+        "limits": "Single well-mixed zone; no data on vertical gradients. Needs stacked zones or CFD."
+      }
+    },
+    {
+      "id": "natural_ventilation_airflow",
+      "name": "Wind- and stack-driven airflow",
+      "question": "Can real openings deliver the assumed air-change rates on a still, hot afternoon?",
+      "status": "proxy",
+      "how": "e+",
+      "priority": 1,
+      "current": "Fixed ACH in the sweep; vent area is a stack-only proxy in js/model.js (ventArea)",
+      "notes": "ZoneVentilation:WindandStackOpenArea or the Airflow Network, driven by opening area and height difference.",
+      "informs": [
+        "vent_opening_area"
+      ],
+      "now": {
+        "level": "approx",
+        "how": "Hourly stack flow through an assumed installed free area vs the design ACH (H.stackAch; metric \"Hours stack vents meet day ACH\"), plus the existing vent-area proxy",
+        "where": "metric in Explore, Trade-offs, Sensitivity",
+        "limits": "Stack only, no wind; uses temperatures from the fixed-ACH run, not coupled. Free area is an editable assumption."
+      }
+    },
+    {
+      "id": "comfort_air_speed",
+      "name": "Comfort with elevated air speed",
+      "question": "How many degrees of relief do fans or cross-flow give occupants?",
+      "status": "missing",
+      "how": "js",
+      "priority": 3,
+      "inputs": [
+        "operative temperature (sweep.json)",
+        "assumed air speed, clothing, metabolic rate"
+      ],
+      "notes": "SET or ASHRAE 55 elevated-air-speed method; ladybug-comfort has the equations.",
+      "informs": [
+        "ceiling_fans"
+      ],
+      "now": {
+        "level": "approx",
+        "how": "ASHRAE 55 elevated-air-speed allowance subtracted from occupied-hour operative (H.fanCooling)",
+        "where": "Diagnose › Interventions outside the sweep",
+        "limits": "Assumes fans reach every occupant; fan energy not counted."
+      }
+    },
+    {
+      "id": "daylight_glare",
+      "name": "Spatial daylight and glare",
+      "question": "Which shading designs keep the atrium usefully daylit without glare or sun patches?",
+      "status": "proxy",
+      "how": "external",
+      "priority": 2,
+      "current": "BRE average daylight factor proxy (daylightFactor in js/model.js)",
+      "notes": "Radiance via Honeybee: sDA/ASE on the floor and galleries, DGP at key views. Run per shading option, not per full grid.",
+      "informs": [
+        "dynamic_external_shading",
+        "roof_glazing_ratio",
+        "glazing_g"
+      ],
+      "now": {
+        "level": "approx",
+        "how": "Existing BRE average daylight factor proxy",
+        "where": "metric in Explore, Trade-offs, Sensitivity",
+        "limits": "No glare, sun patches or spatial distribution. Needs Radiance."
+      }
+    },
+    {
+      "id": "winter_balance",
+      "name": "Winter heating including lost solar gain",
+      "question": "How much winter benefit does low-g glazing or a fixed screen give away?",
+      "status": "proxy",
+      "how": "js",
+      "priority": 2,
+      "current": "Conduction-only winter loss proxy (winterLoss); solar gain ignored",
+      "inputs": [
+        "climate.json ghi",
+        "radiation.json annual results for atrium_roof faces"
+      ],
+      "informs": [
+        "glazing_g",
+        "roof_screen_opacity"
+      ],
+      "now": {
+        "level": "approx",
+        "how": "Conduction loss minus useful solar: Ladybug annual incident on the atrium glass × share falling in heating hours × g × frame × utilisation (H.winterSolar; metric \"Winter glass loss − useful solar\")",
+        "where": "metric in Explore, Trade-offs, Sensitivity",
+        "limits": "Present-day temperatures, screen retracted, utilisation factor is an assumption."
+      }
+    },
+    {
+      "id": "energy_operational",
+      "name": "Fan, cooling and electric-lighting energy",
+      "question": "What does each intervention cost to run?",
+      "status": "missing",
+      "how": "e+",
+      "priority": 3,
+      "notes": "Ideal loads for cooling energy; lighting from daylight results; fan power from ACH and pressure drop.",
+      "informs": [
+        "mechanical_cooling",
+        "ceiling_fans",
+        "mechanical_night_purge"
+      ],
+      "now": {
+        "level": "approx",
+        "how": "Cooling to hold 26 °C = (ventilation + glass conductance) × excess (H.coolingNeed); night-purge fan energy = SFP × flow × hours (H.nightFanKwh)",
+        "where": "metric in Explore, Trade-offs, Sensitivity",
+        "limits": "Steady state, ignores thermal mass; lighting energy not covered."
+      }
+    },
+    {
+      "id": "cost_carbon",
+      "name": "Capital cost and embodied carbon",
+      "question": "What does each intervention cost in money and kgCO2e?",
+      "status": "missing",
+      "how": "js",
+      "priority": 2,
+      "notes": "Fill cost_gbp_per_unit and carbon_kgco2e_per_unit in the interventions below from a sourced database (e.g. ICE, SPONs).",
+      "informs": [
+        "all"
+      ],
+      "now": {
+        "level": "partial",
+        "how": "Quantities from the design × rates in this file (H.costCarbon)",
+        "where": "Diagnose",
+        "limits": "Mechanism ready; every rate is null until sourced, so the app says which rates are missing."
+      }
+    },
+    {
+      "id": "adjacent_spaces",
+      "name": "Heat exchange with the surrounding building",
+      "question": "Does the atrium dump heat into, or receive heat from, the galleries and offices?",
+      "status": "missing",
+      "how": "e+",
+      "priority": 3,
+      "notes": "Currently adiabatic walls. Replace with adjacent zones or a measured/assumed boundary temperature.",
+      "now": {
+        "level": "no",
+        "how": null,
+        "where": null,
+        "limits": "Walls are adiabatic in the E+ model. Needs adjacent zones or boundary temperatures."
+      }
+    }
+  ],
+  "interventions": [
+    {
+      "id": "glazing_g",
+      "name": "Lower solar transmittance glazing (solar control)",
+      "category": "solar",
+      "status": "in_sweep",
+      "lever": "g",
+      "range": [
+        0.2,
+        0.7
+      ],
+      "unit": "-",
+      "baseline": 0.6,
+      "model": "WindowConstruction simple glazing SHGC",
+      "trade_offs": [
+        "daylight",
+        "winter_solar_gain",
+        "replacement cost"
+      ],
+      "cost_gbp_per_unit": null,
+      "carbon_kgco2e_per_unit": null,
+      "unit_basis": "m2 glazing",
+      "now": {
+        "level": "yes",
+        "how": "Sweep lever, EnergyPlus results",
+        "where": "Explore designs",
+        "limits": "Grid 0.2–0.7; interpolated between levels with measured error."
+      }
+    },
+    {
+      "id": "glazing_u",
+      "name": "Glazing thermal transmittance",
+      "category": "fabric",
+      "status": "in_sweep",
+      "lever": "u",
+      "range": [
+        1.0,
+        5.8
+      ],
+      "unit": "W/m2K",
+      "baseline": 2.8,
+      "notes": "Effect changes sign with shading: a better U-value traps heat when unshaded.",
+      "trade_offs": [
+        "winter_heat_loss",
+        "replacement cost"
+      ],
+      "cost_gbp_per_unit": null,
+      "carbon_kgco2e_per_unit": null,
+      "unit_basis": "m2 glazing",
+      "now": {
+        "level": "yes",
+        "how": "Sweep lever, EnergyPlus results",
+        "where": "Explore designs",
+        "limits": "Grid 1.0–5.8 W/m²K."
+      }
+    },
+    {
+      "id": "ach_day",
+      "name": "Daytime ventilation rate",
+      "category": "ventilation",
+      "status": "in_sweep",
+      "lever": "ach_day",
+      "range": [
+        1,
+        10
+      ],
+      "unit": "ACH",
+      "baseline": 4,
+      "notes": "Fixed rate - see vent_opening_area for whether it is achievable.",
+      "trade_offs": [
+        "vent_opening_area",
+        "draughts",
+        "noise",
+        "security"
+      ],
+      "now": {
+        "level": "yes",
+        "how": "Sweep lever, EnergyPlus results",
+        "where": "Explore designs",
+        "limits": "Fixed rate; achievability checked by the stack metric."
+      }
+    },
+    {
+      "id": "ach_night",
+      "name": "Night purge ventilation",
+      "category": "ventilation",
+      "status": "in_sweep",
+      "lever": "ach_night",
+      "range": [
+        0,
+        10
+      ],
+      "unit": "ACH",
+      "baseline": 1,
+      "trade_offs": [
+        "security of open vents at night",
+        "rain",
+        "fan energy if mechanical"
+      ],
+      "now": {
+        "level": "yes",
+        "how": "Sweep lever, EnergyPlus results; fan energy if mechanical (proxy)",
+        "where": "Explore designs + metric in Explore, Trade-offs, Sensitivity",
+        "limits": "Fixed rate, no temperature control of the openings."
+      }
+    },
+    {
+      "id": "roof_screen_opacity",
+      "name": "Static external roof screen",
+      "category": "solar",
+      "status": "in_sweep",
+      "lever": "screen_opacity",
+      "range": [
+        0,
+        0.9
+      ],
+      "unit": "fraction blocked",
+      "baseline": 0,
+      "model": "Horizontal shade 1.5 m above the ridge, constant transmittance",
+      "trade_offs": [
+        "daylight",
+        "winter_solar_gain",
+        "structure",
+        "maintenance"
+      ],
+      "cost_gbp_per_unit": null,
+      "carbon_kgco2e_per_unit": null,
+      "unit_basis": "m2 screen",
+      "now": {
+        "level": "yes",
+        "how": "Sweep lever, EnergyPlus results",
+        "where": "Explore designs",
+        "limits": "Static, uniform plane."
+      }
+    },
+    {
+      "id": "dynamic_external_shading",
+      "name": "Controlled or moving external roof shading",
+      "category": "solar",
+      "status": "missing",
+      "priority": 1,
+      "lever": "shade_trigger_w_m2",
+      "range": [
+        100,
+        400
+      ],
+      "unit": "W/m2 on the roof",
+      "baseline": null,
+      "extra_levers": {
+        "shade_opacity": [
+          0.5,
+          0.9
+        ]
+      },
+      "model": "Shade transmittance schedule driven by solar radiation, or WindowShadingControl ExteriorShade with OnIfHighSolarOnWindow",
+      "why": "Keeps winter and dull-day daylight that a static screen throws away",
+      "needs_analysis": [
+        "daylight_glare",
+        "winter_balance",
+        "cost_carbon"
+      ],
+      "cost_gbp_per_unit": null,
+      "carbon_kgco2e_per_unit": null,
+      "unit_basis": "m2 roof",
+      "now": {
+        "level": "approx",
+        "how": "In hours with sun above the trigger, the operative temperature of the screened design is used; daylight reduced by the share of daylight hours deployed",
+        "where": "Diagnose › Interventions outside the sweep",
+        "limits": "Ignores heat stored before deployment and control lag."
+      }
+    },
+    {
+      "id": "internal_blinds",
+      "name": "Internal roof blinds",
+      "category": "solar",
+      "status": "missing",
+      "priority": 3,
+      "lever": "blind_reflectance",
+      "range": [
+        0.3,
+        0.8
+      ],
+      "unit": "-",
+      "model": "WindowShadingControl InteriorShade",
+      "why": "Cheap retrofit; much less effective than external shading because the heat is already inside - worth showing that",
+      "needs_analysis": [
+        "heat_balance",
+        "stratification"
+      ],
+      "now": {
+        "level": "no",
+        "how": null,
+        "where": null,
+        "limits": "Inside the glass: needs WindowShadingControl in E+."
+      }
+    },
+    {
+      "id": "roof_glazing_ratio",
+      "name": "Reduce glazing on the south roof slope (opaque or insulated panels)",
+      "category": "geometry",
+      "status": "missing",
+      "priority": 1,
+      "lever": "rs_glazing_fraction",
+      "range": [
+        0.3,
+        1.0
+      ],
+      "unit": "fraction of current RS glazing",
+      "baseline": 1.0,
+      "model": "Scale glazing_m2 on south roof faces in zone_faces() / atrium_geometry.json",
+      "why": "The south slope carries the largest glazed area (626 m2) and the highest exposure",
+      "needs_analysis": [
+        "solar_by_element",
+        "daylight_glare"
+      ],
+      "now": {
+        "level": "approx",
+        "how": "Mapped to an equivalent g using the south slope's share of incident solar (53%), then the sweep is interpolated",
+        "where": "Diagnose › Interventions outside the sweep",
+        "limits": "Conduction change through new opaque panels ignored; clamped at the lowest simulated g."
+      }
+    },
+    {
+      "id": "fritted_or_pv_glazing",
+      "name": "Fritted or PV-integrated roof glazing",
+      "category": "solar",
+      "status": "missing",
+      "priority": 2,
+      "lever": "frit_coverage",
+      "range": [
+        0,
+        0.6
+      ],
+      "unit": "fraction",
+      "baseline": 0,
+      "model": "Reduce effective g and VT on roof apertures; PV yield from radiation.json results",
+      "why": "Turns part of the solar problem into generation",
+      "needs_analysis": [
+        "daylight_glare",
+        "cost_carbon",
+        "energy_operational"
+      ],
+      "now": {
+        "level": "approx",
+        "how": "Equivalent g as above, plus PV yield = annual incident on roof glass × coverage × yield factor",
+        "where": "Diagnose › Interventions outside the sweep",
+        "limits": "Frit treated as opaque; PV temperature losses and wiring not modelled."
+      }
+    },
+    {
+      "id": "vent_opening_area",
+      "name": "Openable vent area and height (high- and low-level)",
+      "category": "ventilation",
+      "status": "missing",
+      "priority": 1,
+      "lever": "vent_area_m2",
+      "range": [
+        5,
+        60
+      ],
+      "unit": "m2 free area",
+      "baseline": null,
+      "extra_levers": {
+        "vent_height_diff_m": [
+          10,
+          22
+        ],
+        "open_above_c": [
+          20,
+          24
+        ]
+      },
+      "model": "ZoneVentilation:WindandStackOpenArea replacing the fixed-ACH Infiltration object",
+      "why": "Replaces assumed ACH with what real openings deliver; links ventilation to a buildable design",
+      "needs_analysis": [
+        "natural_ventilation_airflow",
+        "stratification"
+      ],
+      "now": {
+        "level": "approx",
+        "how": "Installed free area (editable assumption) drives the stack metric",
+        "where": "Assumptions + metric in Explore, Trade-offs, Sensitivity",
+        "limits": "Does not change the simulated temperatures; wind ignored."
+      }
+    },
+    {
+      "id": "mechanical_night_purge",
+      "name": "Fan-assisted night purge",
+      "category": "ventilation",
+      "status": "missing",
+      "priority": 3,
+      "lever": "purge_fan_ach",
+      "range": [
+        2,
+        8
+      ],
+      "unit": "ACH",
+      "model": "Fan-driven ZoneVentilation with a night schedule and minimum outdoor temperature",
+      "needs_analysis": [
+        "night_flush_effectiveness",
+        "energy_operational"
+      ],
+      "now": {
+        "level": "yes",
+        "how": "Thermal effect = ach_night sweep lever; fan energy = proxy metric",
+        "where": "Explore designs + metric in Explore, Trade-offs, Sensitivity",
+        "limits": "No minimum outdoor temperature control."
+      }
+    },
+    {
+      "id": "thermal_mass",
+      "name": "More exposed thermal mass",
+      "category": "fabric",
+      "status": "missing",
+      "priority": 2,
+      "lever": "mass_m2",
+      "range": [
+        500,
+        3000
+      ],
+      "unit": "m2 exposed concrete",
+      "baseline": 1000,
+      "model": "MASS_M2 in sweep_atrium.py (InternalMass)",
+      "why": "Only useful together with night purge - a good interaction to show",
+      "needs_analysis": [
+        "night_flush_effectiveness"
+      ],
+      "now": {
+        "level": "no",
+        "how": null,
+        "where": null,
+        "limits": "Mass is fixed at 1000 m² in every run. Needs MASS_M2 as a sweep lever."
+      }
+    },
+    {
+      "id": "pcm",
+      "name": "Phase-change material panels",
+      "category": "fabric",
+      "status": "missing",
+      "priority": 3,
+      "lever": "pcm_m2",
+      "range": [
+        0,
+        1000
+      ],
+      "unit": "m2",
+      "extra_levers": {
+        "melt_c": [
+          22,
+          26
+        ]
+      },
+      "model": "MaterialProperty:PhaseChange with ConductionFiniteDifference algorithm",
+      "needs_analysis": [
+        "night_flush_effectiveness",
+        "cost_carbon"
+      ],
+      "now": {
+        "level": "no",
+        "how": null,
+        "where": null,
+        "limits": "Needs the finite-difference heat balance in E+."
+      }
+    },
+    {
+      "id": "cool_roof",
+      "name": "High-reflectance opaque roof finish",
+      "category": "fabric",
+      "status": "missing",
+      "priority": 3,
+      "lever": "roof_solar_absorptance",
+      "range": [
+        0.2,
+        0.8
+      ],
+      "unit": "-",
+      "baseline": 0.6,
+      "model": "solar_absorptance of FF_Steel1 on the opaque panels",
+      "now": {
+        "level": "no",
+        "how": null,
+        "where": null,
+        "limits": "Opaque panel absorptance is fixed in every run."
+      }
+    },
+    {
+      "id": "internal_gains",
+      "name": "Reduce internal gains (LED, equipment)",
+      "category": "operation",
+      "status": "missing",
+      "priority": 3,
+      "lever": "q_int_w_m2",
+      "range": [
+        2,
+        10
+      ],
+      "unit": "W/m2",
+      "baseline": 5,
+      "model": "Q_INT in sweep_atrium.py",
+      "now": {
+        "level": "approx",
+        "how": "Steady-state shift of occupied-hour temperature = Δgains / (ventilation + glass conductance)",
+        "where": "Diagnose › Interventions outside the sweep",
+        "limits": "No thermal mass, so an upper bound."
+      }
+    },
+    {
+      "id": "ceiling_fans",
+      "name": "Ceiling or high-volume low-speed fans",
+      "category": "comfort",
+      "status": "missing",
+      "priority": 2,
+      "lever": "air_speed_m_s",
+      "range": [
+        0.1,
+        1.0
+      ],
+      "unit": "m/s",
+      "baseline": 0.1,
+      "model": "No change to E+ temperatures; comfort benefit via elevated-air-speed method",
+      "needs_analysis": [
+        "comfort_air_speed",
+        "energy_operational"
+      ],
+      "now": {
+        "level": "approx",
+        "how": "Comfort allowance from air speed (see comfort_air_speed)",
+        "where": "Diagnose › Interventions outside the sweep",
+        "limits": "Fan energy and coverage not modelled."
+      }
+    },
+    {
+      "id": "mechanical_cooling",
+      "name": "Mechanical or evaporative cooling (last resort)",
+      "category": "systems",
+      "status": "missing",
+      "priority": 3,
+      "lever": "cooling_setpoint_c",
+      "range": [
+        24,
+        28
+      ],
+      "unit": "C",
+      "model": "Ideal loads air system with cooling setpoint; report cooling energy instead of overheating",
+      "why": "Benchmark: shows the energy that passive measures avoid",
+      "needs_analysis": [
+        "energy_operational",
+        "cost_carbon"
+      ],
+      "now": {
+        "level": "approx",
+        "how": "Cooling-to-26 °C proxy metric",
+        "where": "metric in Explore, Trade-offs, Sensitivity",
+        "limits": "Steady state; no system efficiency."
+      }
+    },
+    {
+      "id": "occupied_zone_location",
+      "name": "Move occupation away from the hottest zones",
+      "category": "operation",
+      "status": "missing",
+      "priority": 3,
+      "model": "Report temperatures per vertical zone; no fabric change",
+      "needs_analysis": [
+        "stratification"
+      ],
+      "now": {
+        "level": "no",
+        "how": null,
+        "where": null,
+        "limits": "Needs stratification results."
+      }
+    }
+  ]
+}

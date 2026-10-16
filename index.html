@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Heat Headroom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+
+<header class="bar">
+  <div class="wrap">
+    <a class="mark" href="#top">Forecast Factory X</a>
+    <nav aria-label="Sections">
+      <a href="#problem">Problem</a>
+      <a href="#baseline">Baseline</a>
+      <a href="#floor">Outdoor air</a>
+      <a href="#heat">Heat balance</a>
+      <a href="#building">Building</a>
+      <a class="keep" href="#floors">Floorplates</a>
+      <a href="#space">Design space</a>
+      <a href="#explore">Explorer</a>
+      <a href="#headroom">Headroom</a>
+      <a href="#honesty">Honesty</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- HERO -->
+<section class="band hero">
+  <div class="wrap grid">
+    <div class="copy">
+      <div class="eyebrow"><span>Team 05</span><span>Track 01 · Analytical tool</span><span>16.10.2026</span></div>
+      <h1>Heat<br>Head&shy;room</h1>
+      <p class="lede">How much hotter can the Geoffrey Manton atrium get before each retrofit fails?</p>
+      <p>Every design gets one extra number: the degrees of further warming it can take before its overheating score passes the limit of 42 K·h.</p>
+    </div>
+    <div class="fig portrait"><canvas id="c-hero" aria-label="Diagram: dashed arcs show the outdoor-air overheating score today (3 K·h), the pass limit (42), the 2050 weather file (46.8) and 2050 plus 2 °C (83). The atrium baseline sits far beyond them at 320.6 K·h." role="img"></canvas></div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="band k" id="problem">
+  <div class="wrap grid">
+    <div class="copy">
+      <div class="eyebrow"><span>01 · Why</span><span>The problem</span></div>
+      <h2>Summer 2026 showed what overheating costs</h2>
+      <p>Causes named in the brief: buildings designed for winter first, urban heat islands, and no overheating rules for the buildings we already have.</p>
+      <div class="nums">
+        <div class="num"><b>2,877</b><span>excess heat-associated deaths in England, May and June 2026</span></div>
+        <div class="num"><b>92%</b><span>of UK buildings projected to overheat by 2050</span></div>
+        <div class="num"><b>0</b><span>overheating rules for existing buildings</span></div>
+      </div>
+      <p class="cap">One dot per death: 2,877 points. Source: Forecast Factory X briefing document.</p>
+    </div>
+    <div class="fig square"><canvas id="c-sphere" role="img" aria-label="A rotating sphere of 2,877 white dots, one for each excess heat-associated death in England in May and June 2026."></canvas></div>
+  </div>
+</section>
+
+<!-- BASELINE -->
+<section class="band" id="baseline">
+  <div class="wrap grid flip">
+    <div class="copy">
+      <div class="eyebrow"><span>01 · Why</span><span>Our case</span></div>
+      <h2>The atrium overheats in the 2050 heatwave</h2>
+      <span class="verdict solid">Rating: Overheating</span>
+      <p>The official score adds up how far the atrium sits above 26 °C in every occupied hour (08:00–18:00) of the hottest week, 14–20 June. Scroll to add it up.</p>
+      <div class="nums">
+        <div class="num"><b>320.6</b><span>K·h above 26 °C. Pass is 42 or less</span></div>
+        <div class="num"><b>40.5°</b><span>peak operative temperature in the atrium</span></div>
+        <div class="num"><b>58/70</b><span>occupied hours above 26 °C</span></div>
+      </div>
+      <p class="cap">Official EnergyPlus score from the organisers’ starter file · EVAL ID EC2F526D.</p>
+    </div>
+    <div class="fig wide"><canvas id="c-week" role="img" aria-label="Line chart of the hot week: atrium operative temperature against outdoor air, with the excess above 26 °C in occupied hours hatched."></canvas></div>
+  </div>
+</section>
+
+<!-- OUTDOOR FLOOR -->
+<section class="band k" id="floor">
+  <div class="wrap grid">
+    <div class="copy">
+      <div class="eyebrow"><span>01 · Why</span><span>The key finding</span></div>
+      <h2>Even the outdoor air fails</h2>
+      <p>Score the street itself with the same metric and the same week. In 2050 the air outside is already over the line, so to pass, the atrium has to stay cooler than outdoors at peak hours.</p>
+      <div class="nums">
+        <div class="num"><b>3</b><span>K·h outdoor air today</span></div>
+        <div class="num"><b>46.8</b><span>K·h outdoor air in the 2050 file</span></div>
+        <div class="num"><b>83</b><span>K·h with 2 °C more warming</span></div>
+      </div>
+      <p>Only cool night air stored in the concrete can do that. Night ventilation alone takes the baseline from 320.6 to 224.8 K·h.</p>
+      <p class="cap">Each surface: 24 hours × 7 days of outdoor temperature. Yellow dots are occupied hours above 26 °C.</p>
+    </div>
+    <div class="fig portrait"><canvas id="c-terrain" role="img" aria-label="Three stacked dot surfaces of outdoor temperature over the hot week: today, the 2050 file, and 2050 plus 2 °C. Hot occupied hours grow with each layer."></canvas></div>
+  </div>
+</section>
+
+<!-- HEAT BALANCE -->
+<section class="band" id="heat">
+  <div class="wrap grid flip">
+    <div class="copy">
+      <div class="eyebrow"><span>01 · Why</span><span>The heat balance</span></div>
+      <h2>A solar problem first, a night-cooling problem second</h2>
+      <p>1,351 m² of unshaded roof glass. Solar gain is about 60 times the gains from people and equipment.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Heat in · hot week</th><th class="r">kWh</th></tr></thead>
+        <tbody>
+          <tr><td>Sun on the roof glass</td><td class="r">48,553</td></tr>
+          <tr><td>Sun through it, g 0.6</td><td class="r">22,856</td></tr>
+          <tr><td>People and equipment</td><td class="r">≈ 360</td></tr>
+        </tbody>
+      </table></div>
+      <div class="tbl"><table>
+        <thead><tr><th>Heat out · per °C</th><th class="r">kW/K</th></tr></thead>
+        <tbody>
+          <tr><td>Day ventilation, 4 ACH</td><td class="r">≈ 28.6</td></tr>
+          <tr><td>Night ventilation, 1 ACH</td><td class="r">≈ 7.2</td></tr>
+          <tr><td>Glass, U 2.8 × 1,351 m²</td><td class="r">≈ 3.8</td></tr>
+        </tbody>
+      </table></div>
+      <p class="cap">Starter-file inputs and EnergyPlus output. kW/K is heat removed per degree between inside and outside.</p>
+    </div>
+    <div class="fig square"><canvas id="c-heat" role="img" aria-label="Exploded isometric of the atrium: roof glass grid on top, air volume in the middle, exposed concrete below. Sunlight particles fall; about half pass through the glass."></canvas></div>
+  </div>
+</section>
+
+<!-- BUILDING: rebuild of section 2 of the Atrium Heat Lab starter app -->
+<section class="band k bld" id="building">
+  <div class="ticker" aria-hidden="true"><div class="ticker-track"><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span></div></div>
+  <div class="wrap">
+    <div class="grid">
+      <div class="copy">
+        <div class="eyebrow"><span>02 · Building</span><span>Envelope radiation</span></div>
+        <h2>Where the heat comes in</h2>
+      </div>
+      <div class="copy">
+        <p>Ladybug incident radiation on the outward-facing envelope, shaded by the surrounding city. Drag to orbit, scroll to zoom, and hover a surface for its value.</p>
+      </div>
+    </div>
+    <div class="b-bar">
+      <div class="seg" role="group" aria-label="Radiation study">
+        <button type="button" data-key="hot_week" aria-pressed="true">Hot week</button><button type="button" data-key="annual">Annual</button><button type="button" data-key="benefit_present">Benefit/harm today</button><button type="button" data-key="benefit_future">Benefit/harm 2050</button>
+      </div>
+      <div class="b-legend"><span id="b-lo">0</span><span class="b-ramp" id="b-ramp"></span><span id="b-hi">42 kWh/m²</span></div>
+    </div>
+    <div class="b-stage">
+      <div class="b-viewer" id="b-viewer" role="img" aria-label="3D model of the Geoffrey Manton building and its neighbours. Envelope surfaces are coloured from blue (little sun) to pink (most sun).">
+        <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
+        <span class="b-tag tl">MODEL_SPACE · RHINO M · Z UP</span>
+        <span class="b-tag bl">DRAG TO ORBIT · SCROLL TO ZOOM · HOVER A SURFACE</span>
+      </div>
+      <aside class="b-hud" aria-live="polite">
+        <span class="b-hello">HELLO</span>
+        <span class="b-line"><span id="b-label">ATRIUM_ROOF</span><span id="b-study">HOT_WEEK</span></span>
+        <b class="b-big" id="b-big">–</b>
+        <span class="b-unit">kWh/m²</span>
+        <span class="b-line"><span id="b-sub">AVERAGE</span></span>
+        <span class="b-load">LOADING_MODEL <span class="b-blink">■</span></span>
+      </aside>
+    </div>
+    <p class="b-insight" id="b-insight"></p>
+    <div class="b-bars">
+      <h3 class="b-h3">Solar energy by building element</h3>
+      <div class="fig b-barsfig"><canvas id="c-bars" role="img" aria-label="Segmented bar chart of solar energy received by each building element over the chosen period. Atrium elements are pink."></canvas></div>
+    </div>
+  </div>
+  <div class="ticker rev" aria-hidden="true"><div class="ticker-track"><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span><span><b>Where the heat comes in</b><i>▲</i><em>2-BUILD-ING(05)</em><u></u></span></div></div>
+</section>
+
+<!-- FLOORPLATES: our tool, embedded from app/ -->
+<section class="band" id="floors">
+  <div class="wrap">
+    <div class="grid">
+      <div class="copy">
+        <div class="eyebrow"><span>03 · Our tool</span><span>Floorplate heat map</span></div>
+        <h2>Where on each floor does it overheat, and does your fix work?</h2>
+      </div>
+      <div class="copy">
+        <p>The official score is one number for the whole atrium. This tool puts it on the plan: the ground floor and the upper floor, spot by spot, from the real hot-week weather and the real EnergyPlus runs. Set a grade from the layers you care about, then change the glass, the roof screen or the ventilation and see what the change does to each floor and to the daylight.</p>
+        <p>Two lenses on the same data: the architect (where and why) and the developer or estates manager (how much floor area is fixed, at what cost to the light).</p>
+      </div>
+    </div>
+    <div class="nums" style="margin-top:32px">
+      <div class="num"><b>800 of 1,041</b><span>designs that pass the score fail the UK adaptive test (TM52)</span></div>
+      <div class="num"><b>2.5×</b><span>the operative score against the air-temperature score: the problem is radiant sun</span></div>
+      <div class="num"><b>9</b><span>passing designs keep daylight above 10%</span></div>
+    </div>
+    <div class="tool-frame">
+      <iframe id="floor-tool" src="app/index.html?embed=1&amp;theme=light" title="Floorplate heat map: interactive tool" loading="lazy"></iframe>
+    </div>
+    <p class="cap tool-cap">Real: 2050 hot-week weather, the atrium geometry EnergyPlus sees, the 3,125 EnergyPlus runs, sun on every point. Placeholder until the Rhino model arrives: floorplate outlines, the upper-floor level, glass transmittance. Every placeholder is listed in the tool. <a href="app/index.html" target="_blank" rel="noopener">Open the tool full screen</a>.</p>
+  </div>
+</section>
+
+<!-- DESIGN SPACE -->
+<section class="band k" id="space">
+  <div class="wrap">
+    <div class="grid">
+      <div class="copy">
+        <div class="eyebrow"><span>02 · The brief</span><span>The starter app</span></div>
+        <h2>1,041 designs pass. Which one keeps passing?</h2>
+      </div>
+      <div class="copy">
+        <p>The organisers already ran 3,125 EnergyPlus designs: every mix of glazing g-value, U-value, day ventilation, night ventilation and roof screen. Scroll and the failing ones drop away.</p>
+        <p class="cap">One dot per simulated design. Rows: g-value × U-value. Columns: day vent × night vent × roof screen. Source: data/sweep.json.</p>
+      </div>
+    </div>
+    <div class="fig strip" style="margin-top:40px"><canvas id="c-space" role="img" aria-label="A grid of 3,125 dots, one per simulated design. 1,041 passing designs are highlighted in yellow; the baseline design is circled."></canvas></div>
+  </div>
+</section>
+
+<!-- DESIGN EXPLORER: rebuild of section 3 of the Atrium Heat Lab starter app -->
+<section class="band" id="explore">
+  <div class="wrap">
+    <div class="grid">
+      <div class="copy">
+        <div class="eyebrow"><span>02 · The brief</span><span>Design explorer</span></div>
+        <h2>Explore 3,125 simulated designs</h2>
+      </div>
+      <div class="copy">
+        <p>Every combination of the five levers was simulated in EnergyPlus. Between grid points the explorer interpolates and says how far off that can be. Move a lever and the week redraws.</p>
+      </div>
+    </div>
+    <div class="explorer">
+      <div class="x-panel">
+        <div id="levers" class="levers"></div>
+        <div class="x-buttons">
+          <button class="btn" type="button" id="btn-base">Reset to baseline</button>
+          <button class="btn" type="button" id="btn-snap">Snap to nearest simulated</button>
+          <button class="btn" type="button" id="btn-best">Best score with daylight ≥ 5%</button>
+        </div>
+      </div>
+      <div class="x-panel">
+        <div class="x-score"><b id="x-score">320.6</b><span>K·h</span><span class="verdict solid" id="x-band">Overheating</span></div>
+        <p class="x-fid" id="x-fid">Simulated design: every EnergyPlus value here is a direct result.</p>
+        <div class="fig wide"><canvas id="c-design" role="img" aria-label="Hot-week operative temperature for the chosen design against the baseline and outdoor air, with hours above 26 °C hatched."></canvas></div>
+        <div class="x-metrics" id="x-metrics"></div>
+        <h3 class="x-h3">What this design asks of the building</h3>
+        <ul class="flags" id="x-flags"></ul>
+        <p class="cap">E+ is a direct or interpolated EnergyPlus result. Proxy values use the starter app’s editable assumptions. Hourly temperatures are stored to 0.25 °C.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HEADROOM -->
+<section class="band" id="headroom">
+  <div class="wrap grid">
+    <div class="copy">
+      <div class="eyebrow"><span>03 · Our tool</span><span>How it works</span></div>
+      <h2>The same sweep, repeated in a warmer world</h2>
+      <ol class="steps">
+        <li><i>01</i><div><b>Warmer weather</b><span>Shift the 2050 file by +0.5, +1 and +2 °C, the way FF Climate Morph does.</span></div></li>
+        <li><i>02</i><div><b>Re-run EnergyPlus</b><span>243 designs × 4 climates, about 1,000 runs of the official model.</span></div></li>
+        <li><i>03</i><div><b>Headroom</b><span>The extra warming each design takes before it passes 42 K·h, with its error measured.</span></div></li>
+        <li><i>04</i><div><b>Show it</b><span>Colour the trade-off front by headroom. A “safe until” card for any design.</span></div></li>
+      </ol>
+      <p class="cap">Bottom plane: real 2050 results for the 243-design grid. Upper planes are a placeholder until the warmer sweep runs.</p>
+    </div>
+    <div class="fig portrait"><canvas id="c-planes" role="img" aria-label="Four stacked isometric planes of 243 cells, one per design, for the 2050 file and three warmer climates. Fewer cells stay filled as the climate warms."></canvas></div>
+  </div>
+</section>
+
+<!-- HONESTY -->
+<section class="band k" id="honesty">
+  <div class="wrap grid">
+    <div class="copy">
+      <div class="eyebrow"><span>03 · Our tool</span><span>Trade-offs and honesty</span></div>
+      <h2>Every number labelled, every error measured</h2>
+      <p>A design with lots of headroom usually needs a heavy screen or very low g-value, which costs daylight, and big night vents. We plot headroom against daylight, vent opening and winter heat loss on one front.</p>
+    </div>
+    <div class="copy">
+      <div class="tbl"><table>
+        <thead><tr><th>Number</th><th>Where it comes from</th><th>How wrong it might be</th></tr></thead>
+        <tbody>
+          <tr><td>Score, simulated design</td><td>Official EnergyPlus model</td><td>One well-mixed zone; real atria stratify</td></tr>
+          <tr><td>Score, between designs</td><td>Interpolation</td><td>±4.8 K·h typical, 20.4 worst, measured</td></tr>
+          <tr><td>Headroom</td><td>EnergyPlus at 4 climates</td><td>Measured with our own off-grid runs</td></tr>
+          <tr><td>Daylight, winter, vents</td><td>Labelled proxies</td><td>Editable assumptions; no glare, no wind</td></tr>
+          <tr><td>Warmer climates</td><td>Uniform shift of a crude morph</td><td>For comparing designs, not predicting years</td></tr>
+        </tbody>
+      </table></div>
+      <p class="cap">Context check: only 8 of the 99 neighbours within 150 m rise above the atrium clerestory (19.35 m). They cannot shade the roof in occupied hours.</p>
+    </div>
+  </div>
+</section>
+
+<!-- JUDGING / PITCH -->
+<section class="band" id="pitch">
+  <div class="wrap">
+    <div class="grid">
+      <div class="copy">
+        <div class="eyebrow"><span>04 · Why it wins</span></div>
+        <h2>Built for all four criteria</h2>
+      </div>
+      <div class="copy">
+        <p>For MMU estates and the design team: among the 1,041 designs that pass, pick one with headroom, not one that scrapes through.</p>
+      </div>
+    </div>
+    <div class="index">
+      <div class="row"><span class="mono hide-s">Originality</span><b>Safe until</b><span class="hide-s">A “safe until” temperature for every design, and the limit of passive design.</span><span class="mono">25%</span></div>
+      <div class="row"><span class="mono hide-s">Method</span><b>~4,100 runs</b><span class="hide-s">3,125 + about 1,000 EnergyPlus runs, error measured off-grid.</span><span class="mono">25%</span></div>
+      <div class="row"><span class="mono hide-s">Trade-offs</span><b>One front</b><span class="hide-s">Headroom against daylight, vent opening and winter heat loss.</span><span class="mono">25%</span></div>
+      <div class="row"><span class="mono hide-s">Communication</span><b>3 minutes</b><span class="hide-s">One audience, one question, a live demo.</span><span class="mono">25%</span></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-meta">
+      <span>Team 05 · Chu Yang Siah, Binhui Xu, Ahmad Alfakhuri, Lim Song Dian Dianson, Jiu Jiang, Junyi Sui · Mentor Agnieszka Thiel</span>
+      <span>Present 17:00 · Lowry Building LW4.03</span>
+    </div>
+    <p class="wordmark">Heat Headroom</p>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/sweep.js"></script>
+<script src="js/diagrams.js"></script>
+<script src="js/explorer.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="js/building.js"></script>
+<script src="js/building-view.js"></script>
+<script src="js/floors-embed.js"></script>
+</body>
+</html>

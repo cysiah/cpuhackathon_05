@@ -35,7 +35,7 @@
   var S = {
     meta: null, scenarios: [], floors: {}, assumptions: [],
     res: null, cmp: null, selected: null, view: {}, lens: "architect", rankKey: null, rankRows: null,
-    grade: JSON.parse(JSON.stringify(FM.GRADE_DEFAULTS))
+    grade: JSON.parse(JSON.stringify(FM.GRADE_DEFAULTS)), custom: null, lever: null, baseRes: null
   };
 
   function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
@@ -71,7 +71,7 @@
     };
   }
   function mode() { return document.querySelector("input[name=mode]:checked").value; }
-  function scenById(id) { return S.scenarios.find(function (s) { return s.id === id; }); }
+  function scenById(id) { return id === "custom" ? S.custom : S.scenarios.find(function (s) { return s.id === id; }); }
   function zoneShown(z) {
     if (z === FM.ZONE.ENCLOSED) return $("zEnclosed").checked;
     if (z === FM.ZONE.OPEN) return $("zOpen").checked;
@@ -81,8 +81,9 @@
   function recompute() {
     var p = params();
     S.res = FM.computeAll(S.floors, scenById($("scenario").value), S.meta, p);
-    var c = $("compare").value;
+    var c = $("compare").value, cur = $("scenario").value;
     S.cmp = c ? FM.computeAll(S.floors, scenById(c), S.meta, p) : null;
+    S.baseRes = cur === "base" ? S.res : (c === "base" ? S.cmp : FM.computeAll(S.floors, S.scenarios[0], S.meta, p));
     render();
   }
 
@@ -154,7 +155,7 @@
       div.className = "plan";
       div.innerHTML = "<h3>" + fid + "</h3><div class='meta'>Level +" + f.level_mm.toLocaleString() +
         " mm · floor area " + Math.round(area).toLocaleString() + " m² · grid " + g + " mm" +
-        (f.source === "DEMO" ? " · <span class='tag need'>A01 placeholder geometry</span>" : "") + "</div>";
+        (/placeholder/.test(f.source) ? " · <span class='tag need'>A01 A03 A04 placeholder floor plate</span>" : " · <span class='tag sim'>E+ atrium floor</span>") + "</div>";
       var cv = document.createElement("canvas");
       var dpr = window.devicePixelRatio || 1;
       cv.width = W * dpr; cv.height = H * dpr;
@@ -423,10 +424,10 @@
 
   /* Floor area in each grade class, per scenario, for the estates lens. */
   function rankRows() {
-    var p = params(), zk = [$("zEnclosed").checked, $("zOpen").checked].join();
-    var key = JSON.stringify(p) + zk;
+    var p = params(), zk = [$("zEnclosed").checked, $("zOpen").checked].join(), cur = $("scenario").value;
+    var key = JSON.stringify(p) + zk + (cur === "custom" ? JSON.stringify(S.lever) : "");
     if (S.rankKey === key) return S.rankRows;
-    var rows = S.scenarios.map(function (s) {
+    var rows = S.scenarios.concat(cur === "custom" ? [S.custom] : []).map(function (s) {
       var res = FM.computeAll(S.floors, s, S.meta, p), band = [0, 0, 0, 0], area = 0, wsum = 0;
       S.meta.floors.forEach(function (fid) {
         var f = S.floors[fid], r = res[fid], cell = Math.pow(f.grid_mm / 1000, 2);
@@ -518,11 +519,65 @@
     $("assumpCount").textContent = open + " open of " + S.assumptions.length;
   }
 
+  function leverText(d) {
+    return SC.LEVER_KEYS.map(function (k) { return SC.LEVER_META[k].label.toLowerCase() + " " + Number(d[k]).toFixed(SC.LEVER_META[k].dp); }).join(", ");
+  }
+
   function drawScenarioInfo() {
-    var sc = scenById($("scenario").value);
-    $("scenarioInfo").innerHTML = "Cooling rung: <b>" + RUNGS[sc.rung] + "</b>. Atrium score " + sc.atrium_score_kh +
-      " K·h <span class='tag " + (sc.score_source === "EnergyPlus" ? "sim" : "prx") + "'>" + sc.score_source + "</span>." +
-      (sc.t_op_source === "DEMO" ? " Hourly temperatures are a DEMO shape scaled to that score <span class='tag a'>A16</span>." : "");
+    var sc = scenById($("scenario").value), tag = sc.score_source === "EnergyPlus" ? "sim" : "prx";
+    $("scenarioInfo").innerHTML = "Cooling rung: <b>" + (sc.rungs.length ? sc.rungs.map(function (r) { return RUNGS[r]; }).join(" + ") : RUNGS[0]) +
+      "</b>. Atrium score <b>" + fmt(sc.atrium_score_kh, 1) + " K·h</b> <span class='tag " + tag + "'>" + sc.score_source + "</span>" +
+      (sc.score_source === "interpolated" ? " (typically ±" + fmt(SC.VAL.rmse, 1) + ", worst seen ±" + fmt(SC.VAL.max, 1) + ")" : "") + ".";
+  }
+
+  /* Verdict: this design against the existing atrium, in the same three numbers every time. */
+  function floorStats(res) {
+    var p = params(), out = {};
+    S.meta.floors.forEach(function (fid) {
+      var f = S.floors[fid], r = res[fid], cell = Math.pow(f.grid_mm / 1000, 2), o = { n: 0, area: 0, kh: 0, g: 0, good: 0, tm: 0 };
+      for (var i = 0; i < f.x.length; i++) {
+        if (r.kh[i] === null || !zoneShown(f.zone[i])) continue;
+        o.n++; o.area += cell; o.kh += r.kh[i]; o.g += r.grade[i];
+        if (FM.gradeClass(r.grade[i], S.grade) === 0) o.good += cell;
+        if (r.tm52[i] >= 2) o.tm += cell;
+      }
+      o.kh = o.n ? o.kh / o.n : 0; o.g = o.n ? o.g / o.n : 0;
+      out[fid] = o;
+    });
+    return out;
+  }
+
+  function drawVerdict() {
+    var sc = scenById($("scenario").value), b = S.scenarios[0], host = $("verdict");
+    if (sc.id === "base") {
+      host.innerHTML = "<p>This is the <b>existing atrium</b>, the benchmark. Choose an intervention (left) or move the levers, and this panel says how far it gets, what it costs the daylight and how sure we are.</p>";
+      return;
+    }
+    var s1 = floorStats(S.res), s0 = floorStats(S.baseRes), pct = function (a, c) { return c ? Math.round(100 * (a - c) / c) : 0; };
+    var d = function (x) { return (x > 0 ? "+" : x < 0 ? "−" : "") + Math.abs(Math.round(x)); };
+    var html = "<div class='vhead'><div><span class='vbig'>" + fmt(sc.atrium_score_kh, 0) + "</span> K·h <span class='vsub'>was " + fmt(b.atrium_score_kh, 0) +
+      " · " + d(pct(sc.atrium_score_kh, b.atrium_score_kh)) + "%</span></div><div><span class='tag " + (sc.score_source === "EnergyPlus" ? "sim" : "prx") + "'>" + sc.score_source +
+      "</span> " + (sc.atrium_score_kh <= 42 ? "<b class='ok'>passes</b> the official limit (≤ 42)" : "<b class='bad'>does not pass</b> the official limit (≤ 42)") + "</div></div>";
+    html += "<table><tr><th>Floor</th><th class='n'>Mean K·h</th><th class='n'>Mean grade</th><th class='n'>Good floor, m²</th><th class='n'>TM52 ≥ 2 fails, m²</th></tr>";
+    S.meta.floors.forEach(function (fid) {
+      var x = s1[fid], y = s0[fid];
+      html += "<tr><td>" + fid + "</td><td class='n'>" + Math.round(y.kh) + " → <b>" + Math.round(x.kh) + "</b></td><td class='n'>" + Math.round(y.g) + " → <b>" + Math.round(x.g) +
+        "</b></td><td class='n'>" + Math.round(y.good) + " → <b>" + Math.round(x.good) + "</b></td><td class='n'>" + Math.round(y.tm) + " → <b>" + Math.round(x.tm) + "</b></td></tr>";
+    });
+    html += "</table><ul class='vlist'>";
+    var dl0 = b.daylightPct, dl1 = sc.daylightPct;
+    html += "<li><b>Daylight:</b> atrium average " + fmt(dl0, 1) + "% → " + fmt(dl1, 1) + "% (" + d(pct(dl1, dl0)) + "%) <span class='tag prx'>proxy</span></li>";
+    if (dl1 < 5) html += "<li class='warn'>Below 5% daylight: expect electric light on by day.</li>";
+    else if (dl1 < 0.5 * dl0) html += "<li class='warn'>This fix takes more than half of the daylight.</li>";
+    var w0 = b.ledger.winter_mwh_yr.value, w1 = sc.ledger.winter_mwh_yr.value;
+    if (w1 > w0 * 1.05) html += "<li class='warn'>Winter glazing loss rises " + fmt(w0, 0) + " → " + fmt(w1, 0) + " MWh/yr: a higher U-value lowers the summer score by letting heat out, and costs heating in winter <span class='tag prx'>proxy</span></li>";
+    else if (w1 < w0 * 0.95) html += "<li>Winter glazing loss falls " + fmt(w0, 0) + " → " + fmt(w1, 0) + " MWh/yr <span class='tag prx'>proxy</span></li>";
+    var f0 = b.ledger.fan_kwh_wk.value, f1 = sc.ledger.fan_kwh_wk.value;
+    if (f1 > f0 * 1.5) html += "<li class='warn'>Night purge would need fans if it cannot run on stack and wind: " + fmt(f1, 0) + " kWh/week (was " + fmt(f0, 0) + ") <span class='tag prx'>proxy</span></li>";
+    html += "<li><b>How sure:</b> " + (sc.score_source === "EnergyPlus" ? "a simulated design, so the atrium score is a direct EnergyPlus result."
+      : "between simulated designs, so the atrium score is interpolated: typically ±" + fmt(SC.VAL.rmse, 1) + " K·h, worst seen ±" + fmt(SC.VAL.max, 1) + " K·h.") +
+      " The spot-by-spot pattern is an estimate either way (sun on a person, SolarCal).</li></ul>";
+    host.innerHTML = html;
   }
 
   function render() {
@@ -533,6 +588,7 @@
     drawScatter();
     drawZoneTable();
     drawLedger();
+    drawVerdict();
     if (LENS[S.lens].showRank) drawRanking();
   }
 
@@ -542,19 +598,68 @@
     el.value = value;
   }
 
+  /* Intervention levers: moving one switches the scenario to "Custom". */
+  function buildLevers() {
+    var host = $("levers"), L = SC.levels(), html = "";
+    SC.LEVER_KEYS.forEach(function (k, n) {
+      var m = SC.LEVER_META[k], lo = L[n][0], hi = L[n][L[n].length - 1];
+      html += "<label>" + m.label + " <span class='ex'>existing " + Number(SC.BASE[k]).toFixed(m.dp) + "</span>" +
+        "<input type='range' data-k='" + k + "' min='" + lo + "' max='" + hi + "' step='" + m.step + "' value='" + S.lever[k] + "' aria-label='" + m.label + "'>" +
+        "<output id='lv_" + k + "'>" + Number(S.lever[k]).toFixed(m.dp) + "</output></label>";
+    });
+    host.innerHTML = html;
+    host.querySelectorAll("input").forEach(function (el) {
+      el.addEventListener("input", function () {
+        S.lever[el.getAttribute("data-k")] = +el.value;
+        S.custom = SC.build("custom", "Custom levers", S.lever, S.meta);
+        $("scenario").value = "custom";
+        syncLevers();
+        recompute();
+      });
+    });
+  }
+  function syncLevers() {
+    SC.LEVER_KEYS.forEach(function (k) {
+      var el = document.querySelector("#levers input[data-k=" + k + "]");
+      if (el) el.value = S.lever[k];
+      $("lv_" + k).textContent = Number(S.lever[k]).toFixed(SC.LEVER_META[k].dp);
+    });
+  }
+  function useScenario(id) {
+    var sc = scenById(id);
+    $("scenario").value = id;
+    if (id !== "custom") { S.lever = Object.assign({}, sc.levers); S.custom = SC.build("custom", "Custom levers", S.lever, S.meta); syncLevers(); }
+  }
+
+  function loadData() {
+    if (window.FM_DATA) return Promise.resolve(window.FM_DATA);        // bundled: works from file://
+    return Promise.all([getJSON("data/meta.json"), getJSON("data/assumptions.json")]).then(function (r) {
+      var out = { meta: r[0], assumptions: r[1], floors: {} };
+      return Promise.all(r[0].floors.map(function (fid) { return getJSON("data/floors/" + fid + ".json").then(function (f) { out.floors[fid] = f; }); }))
+        .then(function () { return out; });
+    });
+  }
+
   function boot() {
-    Promise.all([getJSON("data/meta.json"), getJSON("data/scenarios.json"), getJSON("data/assumptions.json")])
-      .then(function (r) {
-        S.meta = r[0]; S.scenarios = r[1]; S.assumptions = r[2];
-        return Promise.all(S.meta.floors.map(function (fid) {
-          return getJSON("data/floors/" + fid + ".json").then(function (f) { S.floors[fid] = f; });
-        }));
-      })
-      .then(function () {
-        $("demoFlag").hidden = !S.meta.demo;
-        var sc = S.scenarios.map(function (s) { return [s.id, s.name]; });
-        fillSelect($("scenario"), sc, S.scenarios[0].id);
+    loadData()
+      .then(function (D) {
+        if (typeof SWEEP === "undefined") throw new Error("../js/sweep.js did not load (the EnergyPlus sweep). Keep the app folder next to the js folder.");
+        S.meta = D.meta; S.assumptions = D.assumptions; S.floors = D.floors;
+        SC.init(SWEEP);
+        SC.baseline = SC.build("base", "Existing atrium", {}, S.meta);
+        S.scenarios = SC.PRESETS.map(function (p) { return SC.build(p.id, p.name, p.levers, S.meta); });
+        var best = SC.bestWithDaylight(5);
+        S.scenarios.push(SC.build("best5", "Lowest score keeping daylight ≥ 5% (search of 3,125)", best.levers, S.meta));
+        S.lever = Object.assign({}, SC.BASE);
+        S.custom = SC.build("custom", "Custom levers", S.lever, S.meta);
+        var m = S.meta;
+        $("demoFlag").hidden = !(m.demo || m.placeholder_geometry);
+        $("demoFlag").innerHTML = m.demo ? "<b>DEMO DATA</b><span>Everything here is a placeholder.</span>" :
+          "<b>REAL WEATHER, REAL E+ RESULTS, PLACEHOLDER FLOORS</b><span>Real: 2050 hot-week weather, the atrium geometry EnergyPlus sees, the 3,125 EnergyPlus runs, sun on every point. Placeholder: the 5F level and gallery width, glass transmittance, posture (A03, A04, A06, A11). Floorplate outlines and room zones wait for the Rhino model.</span>";
+        var sc = S.scenarios.map(function (s) { return [s.id, s.name]; }).concat([["custom", "Custom levers (your own)"]]);
+        fillSelect($("scenario"), sc, "base");
         fillSelect($("compare"), [["", "Nothing"]].concat(sc), "");
+        buildLevers();
         var ly = Object.keys(FM.LAYERS).map(function (k) { return [k, FM.LAYERS[k].label]; });
         fillSelect($("layerA"), ly, "kh");
         fillSelect($("layerB"), ly, "df");
@@ -565,13 +670,14 @@
           upd();
           $(s[0]).addEventListener("input", function () { upd(); recompute(); });
         });
-        ["scenario", "compare", "calibrate"].forEach(function (id) { $(id).addEventListener("change", recompute); });
+        $("scenario").addEventListener("change", function () { useScenario($("scenario").value); recompute(); });
+        ["compare", "calibrate"].forEach(function (id) { $(id).addEventListener("change", recompute); });
         ["layerA", "layerB", "zEnclosed", "zOpen"].forEach(function (id) { $(id).addEventListener("change", function () { S.selected = null; render(); }); });
         document.querySelectorAll("input[name=mode]").forEach(function (el) {
           el.addEventListener("change", function () {
             if (mode() === "delta" && !$("compare").value) {
-              $("compare").value = S.scenarios[0].id === $("scenario").value && S.scenarios[1] ? S.scenarios[0].id : S.scenarios[0].id;
-              if ($("compare").value === $("scenario").value && S.scenarios[1]) $("scenario").value = S.scenarios[1].id;
+              if ($("scenario").value === "base") useScenario("screen50");
+              $("compare").value = "base";
               recompute(); return;
             }
             render();
@@ -584,11 +690,14 @@
         });
         setLens("architect");
         if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
-        recompute();
+        if (window.parent !== window) {                                   // embedded in the site: tell it how tall we are
+          var post = function () { window.parent.postMessage({ type: "floormap-height", h: Math.ceil(document.body.getBoundingClientRect().height) }, "*"); };
+          if (window.ResizeObserver) new ResizeObserver(post).observe(document.body); post();
+        }
       })
       .catch(function (err) {
         document.querySelector("main").innerHTML = "<div class='card'><h2>Could not load the data</h2><p>" + err.message +
-          "</p><p>Serve the app folder over HTTP (<code>python -m http.server 8000</code>) rather than opening index.html directly.</p></div>";
+          "</p><p>Serve the repo over HTTP (<code>python -m http.server 8000</code>) and open /app/, or open the site's index.html.</p></div>";
       });
   }
   boot();
