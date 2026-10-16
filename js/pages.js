@@ -9,100 +9,62 @@
   const fmt = (v, dp) => v.toLocaleString("en-GB", { minimumFractionDigits: dp || 0, maximumFractionDigits: dp || 0 });
   const PAPER = "#F1F1EA", PINK = "#FF2E9A", CYAN = "#4FE3FF", RED = "#FF3B2F", BLUE = "#3D5BFF", LILAC = "#FF8FD0";
   const seeded = s => () => (s = (s * 16807) % 2147483647) / 2147483647;
-  const band = s => s <= 42 ? "PASS" : s <= 150 ? "MARGINAL" : s <= 400 ? "OVERHEATING" : "SEVERE";
 
-  // ---------- HOME: every simulated design as a branching tree ----------
-  // root → g-value → U-value → day vent → night vent → roof screen = 3,125 leaves
-  const G_COL = [RED, C.y, LILAC, BLUE, CYAN];
+  // ---------- HOME: the design space as white linework ----------
+  // Every design is a point: its direction comes from its levers, its distance
+  // from the centre from its score, so the worst designs make the longest spikes.
+  // Lines fan from 25 outer apexes (g-value × roof screen) and 25 inner hubs
+  // (day × night ventilation) to their 125 designs each.
   const S = typeof SWEEP !== "undefined" ? SWEEP : null;
-  if (S) reg("c-tree", function (c, W, Hh, t, p, st) {
-    const N = S.score.length, cx = W * (W > 760 ? 0.6 : 0.5), cy = Hh * 0.47, R = Math.min(W * (W > 760 ? 0.4 : 0.47), Hh * 0.46);
-    if (!st.img || st.w !== W || st.h !== Hh) build(st, W, Hh, cx, cy, R);
-    if (st.t0 === undefined) st.t0 = t;
-    const age = t - st.t0;
-    // grow in over 18 frames, stepped
-    const grow = REDUCED ? 1 : clamp(age / 18, 0, 1);
-    c.save();
-    if (grow < 1) { c.beginPath(); c.arc(cx, cy, R * 1.15 * grow, 0, 7); c.clip(); }
-    c.drawImage(st.img, 0, 0, W, Hh);
-    c.restore();
-    if (grow < 1) return;
-    // trace one passing design at a time, 20 frames each
-    const k = REDUCED ? 0 : Math.floor((age - 18) / 20) % st.pass.length;
-    const f = REDUCED ? 5 : Math.min(5, Math.floor(((age - 18) % 20) / 2) + 1);
-    const leaf = st.pass[k], path = st.path(leaf);
-    c.strokeStyle = PAPER; c.lineWidth = 2;
-    for (let d = 1; d <= f; d++) {
-      const a = path[d - 1], b = path[d];
-      st.link(c, a, b);
-    }
-    const end = path[f];
-    c.fillStyle = PAPER; c.beginPath(); c.arc(end.x, end.y, f === 5 ? 5 : 3, 0, 7); c.fill();
-    if (f === 5) {
-      c.strokeStyle = PAPER; c.lineWidth = 1;
-      c.beginPath(); c.arc(end.x, end.y, 10, 0, 7); c.stroke();
-    }
-    // read-out
-    const lv = S.levels, ix = st.digits(leaf), sc = S.score[leaf];
-    font(c, 11, 400); c.fillStyle = PAPER; c.textAlign = "right";
-    const x = W - 4, y = Hh - 40, sep = W < 600 ? " " : "  ·  ";
-    const txt = "DESIGN " + String(leaf).padStart(4, "0") + sep + "g " + lv[0][ix[0]].toFixed(2) + sep + "U " + lv[1][ix[1]].toFixed(1) + sep + "DAY " + lv[2][ix[2]] + sep + "NIGHT " + lv[3][ix[3]] + sep + "SCREEN " + Math.round(lv[4][ix[4]] * 100) + "%";
-    if (c.measureText(txt).width > W - 8) font(c, Math.max(8, Math.floor(11 * (W - 8) / c.measureText(txt).width)), 400);
-    c.fillText(txt, x, y);
-    font(c, 22, 900, DISP); c.fillStyle = C.y;
-    c.fillText(fmt(sc, 1) + " K·h  " + band(sc), x, y + 28);
-    c.textAlign = "left";
+  if (S) reg("c-lines", function (c, W, Hh, t, p, st) {
+    if (!st.pts) linesBuild(st);
+    const wide = W > 760, cx = W * (wide ? 0.66 : 0.5), cy = Hh * 0.5, R = Math.min(W * (wide ? 0.22 : 0.26), Hh * 0.32);
+    const a = REDUCED ? 0.6 : 0.6 + t * 0.012 + p * 0.5, ca = Math.cos(a), sa = Math.sin(a);
+    const tl = -0.35, ct = Math.cos(tl), stl = Math.sin(tl);
+    const proj = q => {
+      const x = q[0] * ca + q[2] * sa, z0 = -q[0] * sa + q[2] * ca;
+      const y = q[1] * ct - z0 * stl, z = q[1] * stl + z0 * ct;
+      const k = 3 / (3 - z);  // gentle perspective
+      return [cx + x * R * k, cy + y * R * k];
+    };
+    const P = st.pts.map(proj), A = st.apex.map(proj), Hb = st.hub.map(proj);
+    c.strokeStyle = "#F1F1EA"; c.lineWidth = 0.5;
+    c.globalAlpha = 0.16; c.beginPath();
+    st.pts.forEach((q, i) => { const o = A[q[3]], d = P[i]; c.moveTo(o[0], o[1]); c.lineTo(d[0], d[1]); });
+    c.stroke();
+    c.globalAlpha = 0.09; c.beginPath();
+    st.pts.forEach((q, i) => { const o = Hb[q[4]], d = P[i]; c.moveTo(o[0], o[1]); c.lineTo(d[0], d[1]); });
+    c.stroke();
+    c.globalAlpha = 1; c.fillStyle = "#F1F1EA";
+    A.forEach(o => { c.beginPath(); c.arc(o[0], o[1], 1.4, 0, 7); c.fill(); });
+    // a single long stray line, as in a drawing left mid-stroke
+    const s0 = A[st.stray];
+    c.globalAlpha = 0.6; c.beginPath(); c.moveTo(s0[0], s0[1]); c.lineTo(s0[0] - R * 0.9, s0[1] - R * 0.25); c.stroke();
+    c.globalAlpha = 1;
   });
 
-  function build(st, W, Hh, cx, cy, R) {
-    const N = S.score.length, rnd = seeded(11);
-    const d = Math.min(2, devicePixelRatio || 1);
-    const img = document.createElement("canvas");
-    img.width = Math.round(W * d); img.height = Math.round(Hh * d);
-    const c = img.getContext("2d"); c.setTransform(d, 0, 0, d, 0, 0);
-    // leaf angles with a gap between the five g-value lobes
-    const GAP = 70, span = N + GAP * 5, a0 = -Math.PI * 0.62;
-    const leafA = i => a0 + 2 * Math.PI * (i + GAP * (Math.floor(i / 625) + 0.5)) / span;
-    const RAD = [0, 0.12, 0.3, 0.5, 0.72, 1];
-    const nodes = [];  // nodes[depth][j] = {a, r, x, y}
-    for (let dep = 0; dep <= 5; dep++) {
-      const n = Math.pow(5, dep), per = N / n, row = [];
-      for (let j = 0; j < n; j++) {
-        const a = dep === 0 ? 0 : (leafA(j * per) + leafA((j + 1) * per - 1)) / 2 + (rnd() - .5) * 0.02;
-        const r = R * RAD[dep] * (dep === 5 ? 0.86 + rnd() * 0.22 : 0.94 + rnd() * 0.12);
-        row.push({ a, r, x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
-      }
-      nodes.push(row);
-    }
-    const P = (a, r) => [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
-    const link = (ctx, A, B) => {
-      const m = (A.r + B.r) / 2;
-      ctx.beginPath(); ctx.moveTo(A.x, A.y);
-      ctx.bezierCurveTo(...P(A.a, m), ...P(B.a, m), B.x, B.y);
-      ctx.stroke();
-    };
-    const digits = i => [Math.floor(i / 625) % 5, Math.floor(i / 125) % 5, Math.floor(i / 25) % 5, Math.floor(i / 5) % 5, i % 5];
-    const path = leaf => { const ds = digits(leaf); let j = 0; const out = [nodes[0][0]]; for (let dep = 1; dep <= 5; dep++) { j = j * 5 + ds[dep - 1]; out.push(nodes[dep][j]); } return out; };
-    const W_D = [0, 1.6, 1.1, 0.75, 0.5, 0.35];
-    for (let dep = 1; dep <= 5; dep++) {
-      const row = nodes[dep];
-      for (let j = 0; j < row.length; j++) {
-        const g = Math.floor(j / Math.pow(5, dep - 1));
-        c.strokeStyle = G_COL[g]; c.globalAlpha = dep === 5 ? 0.45 : 0.7; c.lineWidth = W_D[dep];
-        link(c, nodes[dep - 1][Math.floor(j / 5)], row[j]);
-      }
-    }
-    c.globalAlpha = 1;
-    const pass = [];
+  function linesBuild(st) {
+    const N = S.score.length, rnd = seeded(31), lmax = Math.log(Math.max(...S.score));
+    const dir = (th, ph) => [Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th)];
+    const pts = [];
+    const groupA = Array.from({ length: 25 }, () => [0, 0, 0, 0]);
     for (let i = 0; i < N; i++) {
-      const n = nodes[5][i], ok = S.score[i] <= 42;
-      if (ok) pass.push(i);
-      c.fillStyle = ok ? G_COL[Math.floor(i / 625)] : "rgba(241,241,234,.28)";
-      c.beginPath(); c.arc(n.x, n.y, ok ? 2.4 : 0.9, 0, 7); c.fill();
+      const g = Math.floor(i / 625) % 5, d = Math.floor(i / 25) % 5, n = Math.floor(i / 5) % 5, s = i % 5;
+      const th = ((g * 5 + s) + rnd() * 0.9) / 25 * 2 * Math.PI;
+      const ph = 0.25 + ((d * 5 + n) + rnd() * 0.9) / 25 * (Math.PI - 0.5);
+      const r = 0.3 + 0.7 * Math.log(Math.max(1, S.score[i])) / lmax + (rnd() - .5) * 0.08;
+      const v = dir(th, ph);
+      const q = [v[0] * r, v[1] * r, v[2] * r, g * 5 + s, d * 5 + n];
+      pts.push(q);
+      const ga = groupA[q[3]]; ga[0] += q[0]; ga[1] += q[1]; ga[2] += q[2]; ga[3]++;
     }
-    // visit passing designs in a fixed shuffled order
-    const r2 = seeded(5); pass.sort(() => r2() - 0.5);
-    Object.assign(st, { img, w: W, h: Hh, pass, path, link, digits });
+    // apexes sit outside their fan, pushed out by a random spike length
+    const apex = groupA.map(ga => {
+      const m = [ga[0] / ga[3], ga[1] / ga[3], ga[2] / ga[3]], L = Math.hypot(...m) || 1, k = (1.05 + rnd() * 0.6) / L;
+      return [m[0] * k + (rnd() - .5) * 0.3, m[1] * k + (rnd() - .5) * 0.3, m[2] * k + (rnd() - .5) * 0.3];
+    });
+    const hub = Array.from({ length: 25 }, () => { const v = dir(rnd() * 2 * Math.PI, 0.4 + rnd() * 2.3), r = 0.15 + rnd() * 0.25; return [v[0] * r, v[1] * r, v[2] * r]; });
+    Object.assign(st, { pts, apex, hub, stray: Math.floor(rnd() * 25) });
   }
 
   // ---------- INTRO: one day in the atrium, an hour per step ----------
