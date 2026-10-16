@@ -35,7 +35,7 @@
   "id": "A05",
   "group": "Zoning",
   "what": "Enclosed / open / void zoning",
-  "placeholder": "6 m strips on the north and east sides are enclosed; the rest is open",
+  "placeholder": "6 m strips on the north and east sides are enclosed; the rest is open  [ANSWER: You want areas, not rooms; GF and 5F one floor each. Zones are being requested from the Rhino model.]",
   "question": "Can you draw the zones in Rhino on layers ZONE::Enclosed, ZONE::Open and ZONE::Void? How do you define 'enclosed' (full-height walls and a door?)",
   "status": "open"
  },
@@ -123,9 +123,9 @@
   "id": "A16",
   "group": "EnergyPlus",
   "what": "Hourly atrium operative temperature per scenario",
-  "placeholder": "DEMO daily curve, scaled so its K·h matches each scenario's score",
-  "question": "Does sweep.json hold hourly temperatures per design? If not, can we re-run EnergyPlus for the 7 scenarios and export hourly operative temperature?",
-  "status": "open"
+  "placeholder": "DEMO daily curve, scaled so its K·h matches each scenario's score  [ANSWER: Rhino session reports every sweep run (3,125 + 40 validation) stores 168 hourly operative temperatures for the hot week. Real scenario series requested from it; not yet received.]",
+  "question": "Paste the Rhino session's report so I can replace the demo curves with the real hourly series.",
+  "status": "partial"
  },
  {
   "id": "A17",
@@ -195,7 +195,7 @@
   "id": "A25",
   "group": "Brief",
   "what": "Audience and question",
-  "placeholder": "Two lenses: ARCHITECT ('Where does the heat arrive on each floor, what decides it, and what does fixing it cost the daylight?') and DEVELOPER / ESTATES MANAGER ('Which parts of GF and 5F fail, how much floor area is that, and which intervention fixes the most for the money?'). Wording is mine.",
+  "placeholder": "Two lenses: ARCHITECT ('Where does the heat arrive on each floor, what decides it, and what does fixing it cost the daylight?') and DEVELOPER / ESTATES MANAGER ('Which parts of GF and 5F fail, how much floor area is that, and which intervention fixes the most for the money?'). Wording is mine.  [ANSWER: You want spots (heat map) rather than room rankings, as areas not rooms.]",
   "question": "Are those the right two questions? Is 'developer' and 'estates manager' one lens or two? Which lens opens first on the day, and which one do you present?",
   "status": "partial"
  },
@@ -203,9 +203,9 @@
   "id": "A26",
   "group": "Brief",
   "what": "Floor names",
-  "placeholder": "'GF' and '5F' as you said",
-  "question": "Is 5F the sixth storey (GF, 1F … 5F)? Any reason for 5F over the other floors (most exposed? the one the atrium reaches?)",
-  "status": "open"
+  "placeholder": "'GF' and '5F' as you said  [ANSWER: You said 5F is the highest floor of the atrium building; I have asked the Rhino session to confirm the level.]",
+  "question": "Confirm 5F's finished floor level in mm, and that it is below the atrium roof glass.",
+  "status": "partial"
  },
  {
   "id": "A27",
@@ -221,6 +221,14 @@
   "what": "Score bands applied to single points",
   "placeholder": "The atrium's PASS ≤ 42 / MARGINAL ≤ 150 / OVERHEATING ≤ 400 K·h bands are applied to each grid point's K·h to total floor area per band",
   "question": "Is it fair to grade a point on the atrium's bands, or does the estates lens need a different test (e.g. TM52, or % of occupied hours above 26 °C)?",
+  "status": "open"
+ },
+ {
+  "id": "A29",
+  "group": "Brief",
+  "what": "The Heat Ledger guide's numbers",
+  "placeholder": "The 7 scenarios and their scores (122, 35, 155, 192, 225, TM52 counts) come from the guide 'The heat ledger'. The Rhino session found that the files the guide cites (mechanisms.js, design_catalogue.json, TM52 outputs) are NOT in your 4_Atrium_Heat_Lab folder, so the guide may describe a newer version of the pack.",
+  "question": "Where did 'The heat ledger' come from (organisers, another team, a Miro board)? Until the Rhino session checks sweep.json, treat its scores and the frit / panel / TM52 figures as unverified.",
   "status": "open"
  }
 ]

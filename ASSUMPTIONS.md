@@ -5,7 +5,7 @@ Every guess the Floorplate Heat Map makes is listed here. The app shows the same
 **How to answer:** reply with the ID and your answer (e.g. `A04: 5F is at +17,500 mm, below the roof`).
 I'll update `app/data/assumptions.json`, mark the item answered, and change the code or data.
 
-Open: **28** of 28
+Open: **29** of 29
 
 
 ## Geometry
@@ -21,7 +21,7 @@ Open: **28** of 28
 
 | ID | What | Placeholder in use | Question for you | Status |
 |---|---|---|---|---|
-| A05 | Enclosed / open / void zoning | 6 m strips on the north and east sides are enclosed; the rest is open | **Can you draw the zones in Rhino on layers ZONE::Enclosed, ZONE::Open and ZONE::Void? How do you define 'enclosed' (full-height walls and a door?)** | open |
+| A05 | Enclosed / open / void zoning | 6 m strips on the north and east sides are enclosed; the rest is open  [ANSWER: You want areas, not rooms; GF and 5F one floor each. Zones are being requested from the Rhino model.] | **Can you draw the zones in Rhino on layers ZONE::Enclosed, ZONE::Open and ZONE::Void? How do you define 'enclosed' (full-height walls and a door?)** | open |
 
 ## Glazing
 
@@ -62,7 +62,7 @@ Open: **28** of 28
 
 | ID | What | Placeholder in use | Question for you | Status |
 |---|---|---|---|---|
-| A16 | Hourly atrium operative temperature per scenario | DEMO daily curve, scaled so its K·h matches each scenario's score | **Does sweep.json hold hourly temperatures per design? If not, can we re-run EnergyPlus for the 7 scenarios and export hourly operative temperature?** | open |
+| A16 | Hourly atrium operative temperature per scenario | DEMO daily curve, scaled so its K·h matches each scenario's score  [ANSWER: Rhino session reports every sweep run (3,125 + 40 validation) stores 168 hourly operative temperatures for the hot week. Real scenario series requested from it; not yet received.] | **Paste the Rhino session's report so I can replace the demo curves with the real hourly series.** | partial |
 
 ## Climate
 
@@ -101,7 +101,8 @@ Open: **28** of 28
 
 | ID | What | Placeholder in use | Question for you | Status |
 |---|---|---|---|---|
-| A25 | Audience and question | Two lenses: ARCHITECT ('Where does the heat arrive on each floor, what decides it, and what does fixing it cost the daylight?') and DEVELOPER / ESTATES MANAGER ('Which parts of GF and 5F fail, how much floor area is that, and which intervention fixes the most for the money?'). Wording is mine. | **Are those the right two questions? Is 'developer' and 'estates manager' one lens or two? Which lens opens first on the day, and which one do you present?** | partial |
-| A26 | Floor names | 'GF' and '5F' as you said | **Is 5F the sixth storey (GF, 1F … 5F)? Any reason for 5F over the other floors (most exposed? the one the atrium reaches?)** | open |
+| A25 | Audience and question | Two lenses: ARCHITECT ('Where does the heat arrive on each floor, what decides it, and what does fixing it cost the daylight?') and DEVELOPER / ESTATES MANAGER ('Which parts of GF and 5F fail, how much floor area is that, and which intervention fixes the most for the money?'). Wording is mine.  [ANSWER: You want spots (heat map) rather than room rankings, as areas not rooms.] | **Are those the right two questions? Is 'developer' and 'estates manager' one lens or two? Which lens opens first on the day, and which one do you present?** | partial |
+| A26 | Floor names | 'GF' and '5F' as you said  [ANSWER: You said 5F is the highest floor of the atrium building; I have asked the Rhino session to confirm the level.] | **Confirm 5F's finished floor level in mm, and that it is below the atrium roof glass.** | partial |
 | A27 | What the developer / estates lens measures | Floor area (m²) over the hotspot threshold and failing TM52, per intervention, plus cost and carbon where known. No rent, lettable-area or occupancy data. | **What does a developer or estates manager actually decide on? Usable or lettable area lost? Cost per m² fixed? Compliance? Do you have occupancy or rent figures per zone?** | open |
 | A28 | Score bands applied to single points | The atrium's PASS ≤ 42 / MARGINAL ≤ 150 / OVERHEATING ≤ 400 K·h bands are applied to each grid point's K·h to total floor area per band | **Is it fair to grade a point on the atrium's bands, or does the estates lens need a different test (e.g. TM52, or % of occupied hours above 26 °C)?** | open |
+| A29 | The Heat Ledger guide's numbers | The 7 scenarios and their scores (122, 35, 155, 192, 225, TM52 counts) come from the guide 'The heat ledger'. The Rhino session found that the files the guide cites (mechanisms.js, design_catalogue.json, TM52 outputs) are NOT in your 4_Atrium_Heat_Lab folder, so the guide may describe a newer version of the pack. | **Where did 'The heat ledger' come from (organisers, another team, a Miro board)? Until the Rhino session checks sweep.json, treat its scores and the frit / panel / TM52 figures as unverified.** | open |
