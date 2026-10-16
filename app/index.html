@@ -11,6 +11,12 @@
   <div>
     <p class="eyebrow">Team 05 · Track 01 · Forecast Factory X</p>
     <h1>Floorplate Heat Map</h1>
+    <div class="lens" role="radiogroup" aria-label="Who is looking">
+      <span class="lens-label">View as</span>
+      <label><input type="radio" name="lens" value="architect" checked> Architect</label>
+      <label><input type="radio" name="lens" value="estates"> Developer / estates manager</label>
+      <span class="tag a">A25</span>
+    </div>
     <p class="question" id="question"></p>
   </div>
   <div class="demo-flag" id="demoFlag" hidden>
@@ -66,7 +72,7 @@
     <div class="legend" id="legend"></div>
 
     <div class="cards">
-      <section class="card">
+      <section class="card" id="scatterCard">
         <h2>Cross-reference <span class="sub" id="scatterTitle"></span></h2>
         <canvas id="scatter" width="460" height="320" aria-label="Scatter plot of layer A against layer B; drag to select points"></canvas>
         <p class="hint">Each dot is one grid point. Drag a box to pick points and see where they are on the plans. Click to clear.</p>
@@ -81,6 +87,12 @@
         <table id="ledger"></table>
       </section>
     </div>
+
+    <section class="card wide" id="rankCard" hidden>
+      <h2>Which intervention fixes the most floor? <span class="sub" id="rankSub"></span></h2>
+      <div class="scroll"><table id="rankTable"></table></div>
+      <p class="hint">Each grid point is placed in the official score bands (pass ≤ 42, marginal ≤ 150, overheating ≤ 400 K·h) and its area added up, over the zones ticked on the left. Applying the atrium bands to single points is my assumption (A28). Click a row to show it on the plans. Cost and carbon stay “needs input” until the rates are sourced (A24).</p>
+    </section>
 
     <section class="card wide">
       <h2>Where the numbers come from</h2>

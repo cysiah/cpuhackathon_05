@@ -71,3 +71,13 @@ td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space:
 .tip table td { padding: 1px 6px 1px 0; border: 0; }
 .tip b { display: block; margin-bottom: 4px; }
 select:focus-visible, input:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.lens { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 10px; }
+.lens-label { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.lens label { border: 1px solid var(--line); border-radius: 999px; padding: 5px 14px; cursor: pointer; background: var(--surface); font-weight: 600; font-size: 13px; }
+.lens label:has(input:checked) { border-color: var(--accent); color: var(--accent); }
+.lens input { position: absolute; opacity: 0; pointer-events: none; }
+.lens label:has(input:focus-visible) { outline: 3px solid var(--blue); outline-offset: 2px; }
+#rankTable tr.rk { cursor: pointer; }
+#rankTable tr.rk:hover td { background: var(--bg); }
+#rankTable tr.cur td { background: var(--flag); }
+#rankTable .bar { display: inline-block; height: 8px; border-radius: 2px; background: var(--accent); vertical-align: middle; margin-right: 6px; }

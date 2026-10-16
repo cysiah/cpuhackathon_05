@@ -20,9 +20,21 @@
   var BIV = [["#e8e8e8", "#e4acac", "#c85a5a"], ["#b0d5df", "#ad9ea5", "#985356"], ["#64acbe", "#627f8c", "#574249"]];
   var FLOOR_COLORS = ["#2F6FB0", "#B83A14", "#2E7D4F", "#7A4FA0"];
 
+  /* Two lenses on the same data (A25). Placeholder wording until the team answers. */
+  var LENS = {
+    architect: {
+      question: "Where does the heat arrive on each floor, what decides it, and what does fixing it cost the daylight?",
+      mode: "single", a: "kh", b: "sun_h", showScatter: true, showRank: false
+    },
+    estates: {
+      question: "Which parts of GF and 5F fail, how much floor area is that, and which intervention fixes the most for the money?",
+      mode: "hotspot", a: "kh", b: "df", showScatter: false, showRank: true
+    }
+  };
+
   var S = {
     meta: null, scenarios: [], floors: {}, assumptions: [],
-    res: null, cmp: null, selected: null, view: {}
+    res: null, cmp: null, selected: null, view: {}, lens: "architect", rankKey: null, rankRows: null
   };
 
   function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
@@ -394,6 +406,74 @@
     $("ledger").innerHTML = rows;
   }
 
+  function zoneShownName(z) { return z === "enclosed" ? $("zEnclosed").checked : z === "open" ? $("zOpen").checked : false; }
+
+  var BANDS = [42, 150, 400];   // official score bands applied per point (A28)
+  var BAND_NAMES = ["Pass", "Marginal", "Overheating", "Beyond"];
+  var BAND_COLORS = ["#2E7D4F", "#E0A526", "#D65A31", "#7A1E1E"];
+
+  /* Floor area in each score band, per scenario, for the estates lens. */
+  function rankRows() {
+    var p = params(), zk = [$("zEnclosed").checked, $("zOpen").checked].join();
+    var key = JSON.stringify(p) + zk;
+    if (S.rankKey === key) return S.rankRows;
+    var rows = S.scenarios.map(function (s) {
+      var res = FM.computeAll(S.floors, s, S.meta, p), band = [0, 0, 0, 0], area = 0, wsum = 0;
+      S.meta.floors.forEach(function (fid) {
+        var f = S.floors[fid], r = res[fid], cell = Math.pow(f.grid_mm / 1000, 2);
+        for (var i = 0; i < f.x.length; i++) {
+          if (r.kh[i] === null || !zoneShown(f.zone[i])) continue;
+          var k = r.kh[i];
+          band[k <= BANDS[0] ? 0 : k <= BANDS[1] ? 1 : k <= BANDS[2] ? 2 : 3] += cell;
+          area += cell; wsum += k * cell;
+        }
+      });
+      return { s: s, band: band, area: area, mean: area ? wsum / area : 0 };
+    });
+    S.rankKey = key; S.rankRows = rows;
+    return rows;
+  }
+
+  function drawRanking() {
+    var all = rankRows(), base = all[0], cur = $("scenario").value, rows = all.slice();
+    rows.sort(function (a, b) { return b.band[0] - a.band[0] || a.mean - b.mean; });
+    var html = "<tr><th>Intervention</th><th>Rung</th><th class='n'>Atrium K·h</th><th>Floor area by band</th>" +
+      "<th class='n'>Passing</th><th class='n'>Gained vs existing</th><th class='n'>Cost</th><th class='n'>Carbon</th></tr>";
+    var cell = function (e, unit) { return !e || e.value === null ? "<span class='tag need'>needs input</span>" : e.value.toLocaleString() + " " + unit; };
+    rows.forEach(function (r) {
+      var bar = "<div style='display:flex;height:12px;width:220px;border-radius:3px;overflow:hidden;border:1px solid var(--line)'>";
+      r.band.forEach(function (m, i) {
+        bar += "<span title='" + BAND_NAMES[i] + ": " + Math.round(m) + " m²' style='width:" + (r.area ? 100 * m / r.area : 0) + "%;background:" + BAND_COLORS[i] + "'></span>";
+      });
+      bar += "</div><div style='font-size:11.5px;color:var(--muted);margin-top:2px'>" +
+        r.band.map(function (m, i) { return Math.round(m) + " " + BAND_NAMES[i].toLowerCase(); }).join(" · ") + "</div>";
+      var gain = r.band[0] - base.band[0];
+      html += "<tr class='rk" + (r.s.id === cur ? " cur" : "") + "' data-id='" + r.s.id + "'><td>" + r.s.name + "</td><td>" + RUNGS[r.s.rung] +
+        "</td><td class='n'>" + r.s.atrium_score_kh + " <span class='tag " + (r.s.score_source === "EnergyPlus" ? "sim" : "prx") + "'>" + r.s.score_source + "</span></td>" +
+        "<td>" + bar + "</td><td class='n'>" + Math.round(r.band[0]) + " m²</td><td class='n'>" + (gain > 0 ? "+" + Math.round(gain) + " m²" : "–") + "</td>" +
+        "<td class='n'>" + cell(r.s.ledger.cost_gbp, "£") + "</td><td class='n'>" + cell(r.s.ledger.embodied_tco2e, "tCO₂e") + "</td></tr>";
+    });
+    $("rankTable").innerHTML = html;
+    $("rankSub").textContent = "most floor passing first";
+    document.querySelectorAll("#rankTable tr.rk").forEach(function (tr) {
+      tr.addEventListener("click", function () { $("scenario").value = tr.getAttribute("data-id"); recompute(); });
+    });
+  }
+
+  function setLens(id) {
+    var L = LENS[id];
+    S.lens = id; S.selected = null;
+    $("question").textContent = L.question + " ";
+    var tag = document.createElement("span"); tag.className = "tag a"; tag.textContent = "A25 placeholder";
+    $("question").appendChild(tag);
+    document.querySelector("input[name=mode][value=" + L.mode + "]").checked = true;
+    $("layerA").value = L.a; $("layerB").value = L.b;
+    $("scatterCard").hidden = !L.showScatter;
+    $("rankCard").hidden = !L.showRank;
+    $("compare").value = "";
+    recompute();
+  }
+
   function drawAssumptions() {
     var rows = "<tr><th>ID</th><th>What</th><th>Placeholder in use</th><th>Question for you</th><th>Status</th></tr>";
     S.assumptions.forEach(function (a) {
@@ -420,6 +500,7 @@
     drawScatter();
     drawZoneTable();
     drawLedger();
+    if (LENS[S.lens].showRank) drawRanking();
   }
 
   /* ------------------------------------------------------------ boot */
@@ -437,7 +518,6 @@
         }));
       })
       .then(function () {
-        $("question").textContent = S.meta.question || "";
         $("demoFlag").hidden = !S.meta.demo;
         var sc = S.scenarios.map(function (s) { return [s.id, s.name]; });
         fillSelect($("scenario"), sc, S.scenarios[0].id);
@@ -465,6 +545,10 @@
           });
         });
         wireScatter();
+        document.querySelectorAll("input[name=lens]").forEach(function (el) {
+          el.addEventListener("change", function () { if (el.checked) setLens(el.value); });
+        });
+        setLens("architect");
         if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
         recompute();
       })

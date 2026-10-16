@@ -4,7 +4,7 @@ Team 05, Forecast Factory X hackathon (16 Oct 2026). The topic is overheating at
 
 ## Focus: Track 01 (App)
 
-The work here is for **Track 01**: build an **instrument, not a design**, with one audience and one question.
+The work here is for **Track 01**: build an **instrument, not a design**. The tool has **two lenses** on the same data: **Architect** (where does heat arrive, what decides it, what does it cost daylight) and **Developer / estates manager** (which floor area fails, which intervention fixes the most for the money). Wording is a placeholder, see A25 in `ASSUMPTIONS.md`.
 
 Deliverables:
 - the running app

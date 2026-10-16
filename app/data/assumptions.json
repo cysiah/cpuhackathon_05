@@ -1,28 +1,226 @@
 [
- {"id": "A01", "group": "Geometry", "what": "GF and 5F floorplate outlines", "placeholder": "48,000 × 30,000 mm rectangle for both floors", "question": "Can you give me the real outlines? (closed planar curves in Rhino on layers FLOOR::GF and FLOOR::5F)", "status": "open"},
- {"id": "A02", "group": "Geometry", "what": "Analysis grid", "placeholder": "1,000 mm grid, sensors 1,100 mm above floor (seated)", "question": "Is 1,000 mm fine enough? Should sensors be seated (1,100) or standing (1,500)?", "status": "open"},
- {"id": "A03", "group": "Geometry", "what": "Atrium void footprint", "placeholder": "18,000 × 12,000 mm, centred", "question": "What is the real void outline on each floor? Does it change shape between GF and 5F?", "status": "open"},
- {"id": "A04", "group": "Geometry", "what": "5F floor level", "placeholder": "+16,000 mm (atrium roof is at +19,350 mm)", "question": "What is the 5F finished floor level? Is 5F still inside the atrium (below the roof glass) or above it?", "status": "open"},
- {"id": "A05", "group": "Zoning", "what": "Enclosed / open / void zoning", "placeholder": "6 m strips on the north and east sides are enclosed; the rest is open", "question": "Can you draw the zones in Rhino on layers ZONE::Enclosed, ZONE::Open and ZONE::Void? How do you define 'enclosed' (full-height walls and a door?)", "status": "open"},
- {"id": "A06", "group": "Glazing", "what": "Roof glazing solar transmittance", "placeholder": "0.55 (baseline g 0.6)", "question": "Use the official model's roof g-value, or a measured product value?", "status": "open"},
- {"id": "A07", "group": "Glazing", "what": "Facade glazing solar transmittance", "placeholder": "0.50", "question": "What glass is in the GF and 5F facades?", "status": "open"},
- {"id": "A08", "group": "Glazing", "what": "Facade windows", "placeholder": "40% window-to-wall ratio, head at 2,700 mm; sun spread evenly along the facade (no real window positions)", "question": "Can we export the real window openings for GF and 5F?", "status": "open"},
- {"id": "A09", "group": "Context", "what": "Shading from neighbours on GF", "placeholder": "GF facades get 50% of their sun; 5F gets 100%", "question": "Run Ladybug sun hours with the context model instead? Which context set: existing, removed or future towers?", "status": "open"},
- {"id": "A10", "group": "Comfort model", "what": "SolarCal absorptivity", "placeholder": "0.67 shortwave (ASHRAE 55 default)", "question": "Keep the ASHRAE default?", "status": "open"},
- {"id": "A11", "group": "Comfort model", "what": "Posture", "placeholder": "Seated (effective radiating area 0.696)", "question": "Are people in these spaces mostly seated (study, café) or standing/walking (circulation)? Could differ by zone.", "status": "open"},
- {"id": "A12", "group": "Comfort model", "what": "Projected area factor", "placeholder": "Fixed 0.25 (really depends on sun angle)", "question": "OK to keep fixed for the hackathon, or use Ladybug's full SolarCal component?", "status": "open"},
- {"id": "A13", "group": "Comfort model", "what": "Floor reflectance", "placeholder": "0.25", "question": "What are the floor finishes (concrete, timber, carpet)?", "status": "open"},
- {"id": "A14", "group": "Climate", "what": "Sun position and irradiance", "placeholder": "Synthetic clear-ish sky over 14–20 June in Manchester", "question": "Replace with the morphed 2050 EPW hot week from the starter pack (I need the file or its exported hourly values)", "status": "open"},
- {"id": "A15", "group": "Daylight", "what": "Daylight factor per point", "placeholder": "Geometric proxy from view of the roof opening and distance from the facade", "question": "Run a Honeybee daylight-factor grid on GF and 5F? Is DF the daylight metric you want, or sDA/UDI?", "status": "open"},
- {"id": "A16", "group": "EnergyPlus", "what": "Hourly atrium operative temperature per scenario", "placeholder": "DEMO daily curve, scaled so its K·h matches each scenario's score", "question": "Does sweep.json hold hourly temperatures per design? If not, can we re-run EnergyPlus for the 7 scenarios and export hourly operative temperature?", "status": "open"},
- {"id": "A17", "group": "Climate", "what": "TM52 running-mean outdoor temperature", "placeholder": "DEMO values 17.5–21.2 °C per day", "question": "Compute from the 2050 EPW (needs the days before 14 June too)", "status": "open"},
- {"id": "A18", "group": "Physics", "what": "Warm air rising (stratification)", "placeholder": "0 K per metre (off); slider in the app", "question": "Do you want a gradient on? What value, and from what source (mentor, CIBSE guide, measured)?", "status": "open"},
- {"id": "A19", "group": "Physics", "what": "Enclosed rooms' air temperature", "placeholder": "Same as the atrium + 0 K; slider in the app", "question": "Enclosed rooms are not simulated. Accept the atrium temperature as a stand-in, or simulate them as their own zones?", "status": "open"},
- {"id": "A20", "group": "Method", "what": "Calibration to EnergyPlus", "placeholder": "Point corrections are re-centred so the GF atrium floor averages back to the EnergyPlus score", "question": "Happy with this as the honesty check?", "status": "open"},
- {"id": "A21", "group": "Method", "what": "TM52 category", "placeholder": "Category II (+3 K), one week only, a stress test, not compliance", "question": "Right category for a university building?", "status": "open"},
- {"id": "A22", "group": "Method", "what": "Hotspot thresholds", "placeholder": "Overheating > 42 K·h (the PASS band, per point); DF < 2%; sun > 20 h", "question": "Which thresholds make sense for your audience?", "status": "open"},
- {"id": "A23", "group": "Scenarios", "what": "Scenario list and multipliers", "placeholder": "7 scenarios taken from The Heat Ledger; screens and frit scale roof sun linearly. 'g 0.2 + night purge' score of 40 K·h is a placeholder (the guide says it passes, gives no number)", "question": "Which interventions do you want on the menu? Can you get the real scores for each from the sweep?", "status": "open"},
- {"id": "A24", "group": "Ledger", "what": "Cost, embodied carbon, winter loss per scenario", "placeholder": "Blank ('needs input') except where The Heat Ledger gives a number", "question": "Where do cost and carbon rates come from (SPON's, ICE database, our own assumptions)?", "status": "open"},
- {"id": "A25", "group": "Brief", "what": "Audience and question", "placeholder": "Design team / MMU estates: 'Where on GF and 5F do people overheat, and what does each intervention fix?'", "question": "Who is the audience, and what single question does the tool answer for them?", "status": "open"},
- {"id": "A26", "group": "Brief", "what": "Floor names", "placeholder": "'GF' and '5F' as you said", "question": "Is 5F the sixth storey (GF, 1F … 5F)? Any reason for 5F over the other floors (most exposed? the one the atrium reaches?)", "status": "open"}
+ {
+  "id": "A01",
+  "group": "Geometry",
+  "what": "GF and 5F floorplate outlines",
+  "placeholder": "48,000 × 30,000 mm rectangle for both floors",
+  "question": "Can you give me the real outlines? (closed planar curves in Rhino on layers FLOOR::GF and FLOOR::5F)",
+  "status": "open"
+ },
+ {
+  "id": "A02",
+  "group": "Geometry",
+  "what": "Analysis grid",
+  "placeholder": "1,000 mm grid, sensors 1,100 mm above floor (seated)",
+  "question": "Is 1,000 mm fine enough? Should sensors be seated (1,100) or standing (1,500)?",
+  "status": "open"
+ },
+ {
+  "id": "A03",
+  "group": "Geometry",
+  "what": "Atrium void footprint",
+  "placeholder": "18,000 × 12,000 mm, centred",
+  "question": "What is the real void outline on each floor? Does it change shape between GF and 5F?",
+  "status": "open"
+ },
+ {
+  "id": "A04",
+  "group": "Geometry",
+  "what": "5F floor level",
+  "placeholder": "+16,000 mm (atrium roof is at +19,350 mm)",
+  "question": "What is the 5F finished floor level? Is 5F still inside the atrium (below the roof glass) or above it?",
+  "status": "open"
+ },
+ {
+  "id": "A05",
+  "group": "Zoning",
+  "what": "Enclosed / open / void zoning",
+  "placeholder": "6 m strips on the north and east sides are enclosed; the rest is open",
+  "question": "Can you draw the zones in Rhino on layers ZONE::Enclosed, ZONE::Open and ZONE::Void? How do you define 'enclosed' (full-height walls and a door?)",
+  "status": "open"
+ },
+ {
+  "id": "A06",
+  "group": "Glazing",
+  "what": "Roof glazing solar transmittance",
+  "placeholder": "0.55 (baseline g 0.6)",
+  "question": "Use the official model's roof g-value, or a measured product value?",
+  "status": "open"
+ },
+ {
+  "id": "A07",
+  "group": "Glazing",
+  "what": "Facade glazing solar transmittance",
+  "placeholder": "0.50",
+  "question": "What glass is in the GF and 5F facades?",
+  "status": "open"
+ },
+ {
+  "id": "A08",
+  "group": "Glazing",
+  "what": "Facade windows",
+  "placeholder": "40% window-to-wall ratio, head at 2,700 mm; sun spread evenly along the facade (no real window positions)",
+  "question": "Can we export the real window openings for GF and 5F?",
+  "status": "open"
+ },
+ {
+  "id": "A09",
+  "group": "Context",
+  "what": "Shading from neighbours on GF",
+  "placeholder": "GF facades get 50% of their sun; 5F gets 100%",
+  "question": "Run Ladybug sun hours with the context model instead? Which context set: existing, removed or future towers?",
+  "status": "open"
+ },
+ {
+  "id": "A10",
+  "group": "Comfort model",
+  "what": "SolarCal absorptivity",
+  "placeholder": "0.67 shortwave (ASHRAE 55 default)",
+  "question": "Keep the ASHRAE default?",
+  "status": "open"
+ },
+ {
+  "id": "A11",
+  "group": "Comfort model",
+  "what": "Posture",
+  "placeholder": "Seated (effective radiating area 0.696)",
+  "question": "Are people in these spaces mostly seated (study, café) or standing/walking (circulation)? Could differ by zone.",
+  "status": "open"
+ },
+ {
+  "id": "A12",
+  "group": "Comfort model",
+  "what": "Projected area factor",
+  "placeholder": "Fixed 0.25 (really depends on sun angle)",
+  "question": "OK to keep fixed for the hackathon, or use Ladybug's full SolarCal component?",
+  "status": "open"
+ },
+ {
+  "id": "A13",
+  "group": "Comfort model",
+  "what": "Floor reflectance",
+  "placeholder": "0.25",
+  "question": "What are the floor finishes (concrete, timber, carpet)?",
+  "status": "open"
+ },
+ {
+  "id": "A14",
+  "group": "Climate",
+  "what": "Sun position and irradiance",
+  "placeholder": "Synthetic clear-ish sky over 14–20 June in Manchester",
+  "question": "Replace with the morphed 2050 EPW hot week from the starter pack (I need the file or its exported hourly values)",
+  "status": "open"
+ },
+ {
+  "id": "A15",
+  "group": "Daylight",
+  "what": "Daylight factor per point",
+  "placeholder": "Geometric proxy from view of the roof opening and distance from the facade",
+  "question": "Run a Honeybee daylight-factor grid on GF and 5F? Is DF the daylight metric you want, or sDA/UDI?",
+  "status": "open"
+ },
+ {
+  "id": "A16",
+  "group": "EnergyPlus",
+  "what": "Hourly atrium operative temperature per scenario",
+  "placeholder": "DEMO daily curve, scaled so its K·h matches each scenario's score",
+  "question": "Does sweep.json hold hourly temperatures per design? If not, can we re-run EnergyPlus for the 7 scenarios and export hourly operative temperature?",
+  "status": "open"
+ },
+ {
+  "id": "A17",
+  "group": "Climate",
+  "what": "TM52 running-mean outdoor temperature",
+  "placeholder": "DEMO values 17.5–21.2 °C per day",
+  "question": "Compute from the 2050 EPW (needs the days before 14 June too)",
+  "status": "open"
+ },
+ {
+  "id": "A18",
+  "group": "Physics",
+  "what": "Warm air rising (stratification)",
+  "placeholder": "0 K per metre (off); slider in the app",
+  "question": "Do you want a gradient on? What value, and from what source (mentor, CIBSE guide, measured)?",
+  "status": "open"
+ },
+ {
+  "id": "A19",
+  "group": "Physics",
+  "what": "Enclosed rooms' air temperature",
+  "placeholder": "Same as the atrium + 0 K; slider in the app",
+  "question": "Enclosed rooms are not simulated. Accept the atrium temperature as a stand-in, or simulate them as their own zones?",
+  "status": "open"
+ },
+ {
+  "id": "A20",
+  "group": "Method",
+  "what": "Calibration to EnergyPlus",
+  "placeholder": "Point corrections are re-centred so the GF atrium floor averages back to the EnergyPlus score",
+  "question": "Happy with this as the honesty check?",
+  "status": "open"
+ },
+ {
+  "id": "A21",
+  "group": "Method",
+  "what": "TM52 category",
+  "placeholder": "Category II (+3 K), one week only, a stress test, not compliance",
+  "question": "Right category for a university building?",
+  "status": "open"
+ },
+ {
+  "id": "A22",
+  "group": "Method",
+  "what": "Hotspot thresholds",
+  "placeholder": "Overheating > 42 K·h (the PASS band, per point); DF < 2%; sun > 20 h",
+  "question": "Which thresholds make sense for your audience?",
+  "status": "open"
+ },
+ {
+  "id": "A23",
+  "group": "Scenarios",
+  "what": "Scenario list and multipliers",
+  "placeholder": "7 scenarios taken from The Heat Ledger; screens and frit scale roof sun linearly. 'g 0.2 + night purge' score of 40 K·h is a placeholder (the guide says it passes, gives no number)",
+  "question": "Which interventions do you want on the menu? Can you get the real scores for each from the sweep?",
+  "status": "open"
+ },
+ {
+  "id": "A24",
+  "group": "Ledger",
+  "what": "Cost, embodied carbon, winter loss per scenario",
+  "placeholder": "Blank ('needs input') except where The Heat Ledger gives a number",
+  "question": "Where do cost and carbon rates come from (SPON's, ICE database, our own assumptions)?",
+  "status": "open"
+ },
+ {
+  "id": "A25",
+  "group": "Brief",
+  "what": "Audience and question",
+  "placeholder": "Two lenses: ARCHITECT ('Where does the heat arrive on each floor, what decides it, and what does fixing it cost the daylight?') and DEVELOPER / ESTATES MANAGER ('Which parts of GF and 5F fail, how much floor area is that, and which intervention fixes the most for the money?'). Wording is mine.",
+  "question": "Are those the right two questions? Is 'developer' and 'estates manager' one lens or two? Which lens opens first on the day, and which one do you present?",
+  "status": "partial"
+ },
+ {
+  "id": "A26",
+  "group": "Brief",
+  "what": "Floor names",
+  "placeholder": "'GF' and '5F' as you said",
+  "question": "Is 5F the sixth storey (GF, 1F … 5F)? Any reason for 5F over the other floors (most exposed? the one the atrium reaches?)",
+  "status": "open"
+ },
+ {
+  "id": "A27",
+  "group": "Brief",
+  "what": "What the developer / estates lens measures",
+  "placeholder": "Floor area (m²) over the hotspot threshold and failing TM52, per intervention, plus cost and carbon where known. No rent, lettable-area or occupancy data.",
+  "question": "What does a developer or estates manager actually decide on? Usable or lettable area lost? Cost per m² fixed? Compliance? Do you have occupancy or rent figures per zone?",
+  "status": "open"
+ },
+ {
+  "id": "A28",
+  "group": "Brief",
+  "what": "Score bands applied to single points",
+  "placeholder": "The atrium's PASS ≤ 42 / MARGINAL ≤ 150 / OVERHEATING ≤ 400 K·h bands are applied to each grid point's K·h to total floor area per band",
+  "question": "Is it fair to grade a point on the atrium's bands, or does the estates lens need a different test (e.g. TM52, or % of occupied hours above 26 °C)?",
+  "status": "open"
+ }
 ]

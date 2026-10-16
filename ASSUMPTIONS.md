@@ -5,7 +5,7 @@ Every guess the Floorplate Heat Map makes is listed here. The app shows the same
 **How to answer:** reply with the ID and your answer (e.g. `A04: 5F is at +17,500 mm, below the roof`).
 I'll update `app/data/assumptions.json`, mark the item answered, and change the code or data.
 
-Open: **26** of 26
+Open: **28** of 28
 
 
 ## Geometry
@@ -101,5 +101,7 @@ Open: **26** of 26
 
 | ID | What | Placeholder in use | Question for you | Status |
 |---|---|---|---|---|
-| A25 | Audience and question | Design team / MMU estates: 'Where on GF and 5F do people overheat, and what does each intervention fix?' | **Who is the audience, and what single question does the tool answer for them?** | open |
+| A25 | Audience and question | Two lenses: ARCHITECT ('Where does the heat arrive on each floor, what decides it, and what does fixing it cost the daylight?') and DEVELOPER / ESTATES MANAGER ('Which parts of GF and 5F fail, how much floor area is that, and which intervention fixes the most for the money?'). Wording is mine. | **Are those the right two questions? Is 'developer' and 'estates manager' one lens or two? Which lens opens first on the day, and which one do you present?** | partial |
 | A26 | Floor names | 'GF' and '5F' as you said | **Is 5F the sixth storey (GF, 1F … 5F)? Any reason for 5F over the other floors (most exposed? the one the atrium reaches?)** | open |
+| A27 | What the developer / estates lens measures | Floor area (m²) over the hotspot threshold and failing TM52, per intervention, plus cost and carbon where known. No rent, lettable-area or occupancy data. | **What does a developer or estates manager actually decide on? Usable or lettable area lost? Cost per m² fixed? Compliance? Do you have occupancy or rent figures per zone?** | open |
+| A28 | Score bands applied to single points | The atrium's PASS ≤ 42 / MARGINAL ≤ 150 / OVERHEATING ≤ 400 K·h bands are applied to each grid point's K·h to total floor area per band | **Is it fair to grade a point on the atrium's bands, or does the estates lens need a different test (e.g. TM52, or % of occupied hours above 26 °C)?** | open |

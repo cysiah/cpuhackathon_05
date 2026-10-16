@@ -15,6 +15,10 @@ Don't open `index.html` directly; browsers block the data loading.
 
 ## What it does
 
+Two lenses on the same data (switch at the top; wording is a placeholder, A25):
+- **Architect:** where does heat arrive, what decides it, what does it cost the daylight. Opens on the overheating map with the cross-reference scatter.
+- **Developer / estates manager:** which floor area fails and which intervention fixes the most. Opens on hotspots, with an intervention ranking by floor area in each score band.
+
 - **Plans:** GF and 5F heat maps on one shared colour scale. Voids are hatched; zones are outlined.
 - **Four views:** one layer, two layers (3×3 bivariate), hotspots (count of flags per point), change against another scenario.
 - **Layers:** overheating K·h, TM52 criteria failed, peak temperature, solar MRT rise, sun hours, transmitted solar, daylight factor.
