@@ -17,6 +17,7 @@
     const f = { el, ctx: el.getContext("2d"), draw, sec: el.closest("section"), vis: true, w: 0, h: 0, state: init ? init() : {} };
     figs.push(f);
     new IntersectionObserver(es => { f.vis = es[0].isIntersecting; if (f.vis) paint(f); }, { rootMargin: "80px" }).observe(el);
+    return f;
   }
   function size(f) {
     const r = f.el.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1);
@@ -455,6 +456,9 @@
     font(c, 10, 400);
     c.textAlign = "right"; c.fillText("ONE CELL = ONE DESIGN · FILLED = PASS ≤ 42 K·h", W - 4, H - 6); c.textAlign = "left";
   });
+
+  // shared with js/explorer.js
+  window.HH = { reg, paint, font, clamp, lerp, C, MONO, DISP, REDUCED };
 
   // ---------- loop ----------
   let last = 0;

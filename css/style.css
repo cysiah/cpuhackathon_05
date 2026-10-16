@@ -104,3 +104,45 @@ footer { padding-block: 40px 28px; border-top: 1px solid var(--ink); }
 .foot-meta span { max-width: 60ch; }
 
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* design explorer */
+.explorer { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(24px, 4vw, 64px); margin-top: 40px; border-top: 1px solid var(--ink); padding-top: 28px; }
+@media (max-width: 900px) { .explorer { grid-template-columns: minmax(0, 1fr); } }
+.x-panel { min-width: 0; display: flex; flex-direction: column; gap: 22px; }
+.levers { display: grid; gap: 22px; }
+.lever { display: grid; gap: 6px; }
+.lever label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-weight: 800; text-transform: uppercase; font-size: 14px; letter-spacing: .01em; }
+.lever label b { font-family: var(--mono); font-weight: 500; font-size: 15px; font-variant-numeric: tabular-nums; }
+.lever input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; background: transparent; margin: 0; cursor: pointer; }
+.lever input[type="range"]::-webkit-slider-runnable-track { height: 1px; background: var(--ink); }
+.lever input[type="range"]::-moz-range-track { height: 1px; background: var(--ink); }
+.lever input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -7.5px; background: var(--ink); border: 0; border-radius: 0; transform: rotate(45deg); }
+.lever input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; background: var(--ink); border: 0; border-radius: 0; transform: rotate(45deg); }
+.lever input[type="range"]:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+.lever .ticks { position: relative; height: 1.2em; margin-inline: 8px; font-family: var(--mono); font-size: 11px; }
+.lever .ticks span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.lever .info { font-family: var(--mono); font-size: 11px; opacity: .65; }
+.x-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; background: transparent; color: var(--ink); border: 1px solid var(--ink); padding: 9px 12px; cursor: pointer; border-radius: 0; }
+.btn:hover { background: var(--ink); color: var(--signal); }
+.btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.x-score { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px 14px; }
+.x-score b { font-weight: 900; font-variation-settings: "wdth" 100; font-size: clamp(56px, 7vw, 104px); line-height: .9; font-variant-numeric: tabular-nums; }
+.x-score > span:not(.verdict) { font-family: var(--mono); font-size: 14px; }
+.x-score .verdict { align-self: center; }
+.x-fid { font-family: var(--mono); font-size: 12px; margin: 0; max-width: 70ch; }
+.x-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; border-top: 1px solid var(--ink); }
+.metric { display: grid; gap: 4px; padding: 12px 12px 12px 0; border-bottom: 1px solid var(--rule-y); min-width: 0; }
+.m-label { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+.m-label i { font-style: normal; opacity: .55; }
+.m-val { font-weight: 900; font-size: 24px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.m-val small { font-family: var(--mono); font-weight: 400; font-size: 11px; }
+.m-delta { font-family: var(--mono); font-size: 11px; font-variant-numeric: tabular-nums; opacity: .7; }
+.metric.better .m-delta { opacity: 1; }
+.metric.worse .m-delta { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
+.x-h3 { margin: 0; font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: .01em; }
+.flags { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-top: 1px solid var(--ink); }
+.flags li { display: grid; grid-template-columns: 22px minmax(0, 1fr); padding: 10px 0; border-bottom: 1px solid var(--rule-y); font-size: 15px; }
+.flags li::before { content: "▲"; font-size: 11px; padding-top: 4px; }
+.flags li.ok::before { content: "○"; }
+@media (max-width: 600px) { #explore .fig.wide { aspect-ratio: 4 / 3; } }

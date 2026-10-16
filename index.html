@@ -21,6 +21,7 @@
       <a href="#floor">Outdoor air</a>
       <a href="#heat">Heat balance</a>
       <a href="#space">Design space</a>
+      <a href="#explore">Explorer</a>
       <a class="keep" href="#headroom">Headroom</a>
       <a href="#honesty">Honesty</a>
     </nav>
@@ -144,6 +145,40 @@
   </div>
 </section>
 
+<!-- DESIGN EXPLORER: rebuild of section 3 of the Atrium Heat Lab starter app -->
+<section class="band" id="explore">
+  <div class="wrap">
+    <div class="grid">
+      <div class="copy">
+        <div class="eyebrow"><span>02 · The brief</span><span>Design explorer</span></div>
+        <h2>Explore 3,125 simulated designs</h2>
+      </div>
+      <div class="copy">
+        <p>Every combination of the five levers was simulated in EnergyPlus. Between grid points the explorer interpolates and says how far off that can be. Move a lever and the week redraws.</p>
+      </div>
+    </div>
+    <div class="explorer">
+      <div class="x-panel">
+        <div id="levers" class="levers"></div>
+        <div class="x-buttons">
+          <button class="btn" type="button" id="btn-base">Reset to baseline</button>
+          <button class="btn" type="button" id="btn-snap">Snap to nearest simulated</button>
+          <button class="btn" type="button" id="btn-best">Best score with daylight ≥ 5%</button>
+        </div>
+      </div>
+      <div class="x-panel">
+        <div class="x-score"><b id="x-score">320.6</b><span>K·h</span><span class="verdict solid" id="x-band">Overheating</span></div>
+        <p class="x-fid" id="x-fid">Simulated design: every EnergyPlus value here is a direct result.</p>
+        <div class="fig wide"><canvas id="c-design" role="img" aria-label="Hot-week operative temperature for the chosen design against the baseline and outdoor air, with hours above 26 °C hatched."></canvas></div>
+        <div class="x-metrics" id="x-metrics"></div>
+        <h3 class="x-h3">What this design asks of the building</h3>
+        <ul class="flags" id="x-flags"></ul>
+        <p class="cap">E+ is a direct or interpolated EnergyPlus result. Proxy values use the starter app’s editable assumptions. Hourly temperatures are stored to 0.25 °C.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- HEADROOM -->
 <section class="band" id="headroom">
   <div class="wrap grid">
@@ -220,6 +255,8 @@
 </footer>
 
 <script src="js/data.js"></script>
+<script src="js/sweep.js"></script>
 <script src="js/diagrams.js"></script>
+<script src="js/explorer.js"></script>
 </body>
 </html>
