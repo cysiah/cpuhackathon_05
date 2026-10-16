@@ -112,6 +112,56 @@ footer { padding-block: 40px 28px; border-top: 1px solid var(--ink); }
 .foot-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 32px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
 .foot-meta span { max-width: 60ch; }
 
+/* route map: the chain at a glance (Rhino -> exporters -> JSON -> web app) */
+#chain .lede-c { max-width: 62ch; font-size: clamp(17px, 1.5vw, 20px); margin: 0; }
+.chain-map { position: relative; margin-top: 40px; border-top: 1px solid var(--ink); padding-top: 24px; overflow-x: auto; }
+.chain-cols { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(150px, .75fr) minmax(230px, 1fr) minmax(230px, 1fr) minmax(190px, .8fr); gap: 0 clamp(36px, 5vw, 72px); min-width: 0; }
+.chain-col { display: flex; flex-direction: column; min-width: 0; }
+.chain-col h3 { margin: 0 0 16px; font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; }
+.chain-stack { flex: 1; display: flex; flex-direction: column; gap: 18px; }
+.chain-col.c-rhino .chain-stack { justify-content: center; }
+.chain-col.c-json .chain-stack { justify-content: space-between; }
+.chain-col.c-app .chain-stack { gap: 12px; }
+.cn { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; padding: 14px 16px; border: 1px solid var(--ink); background: var(--signal); color: var(--ink); font-family: var(--display); font-size: 15px; font-weight: 700; line-height: 1.35; }
+.cn .f { display: block; font-family: var(--mono); font-weight: 500; font-size: 13.5px; line-height: 1.55; overflow-wrap: anywhere; }
+.cn .d { display: block; font-family: var(--mono); font-weight: 400; font-size: 12px; margin-top: 4px; opacity: .75; }
+.cn:hover { background: var(--ink); color: var(--signal); }
+.cn:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.cn.sel { box-shadow: inset 0 0 0 3px var(--ink); }
+.cn.sel:hover { box-shadow: none; }
+.c-group { border: 1px solid var(--ink); padding: 12px 16px; display: flex; flex-direction: column; gap: 4px; }
+.c-group .cn { border: 0; padding: 4px 0; background: transparent; }
+.c-group .cn:hover { background: transparent; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.c-group .cn.sel { box-shadow: none; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.c-group .cn.sweep { background: var(--pink); color: var(--ink); padding: 10px 14px; margin: 8px 0 10px; text-decoration: none; }
+.c-group .cn.sweep.sel { box-shadow: inset 0 0 0 3px var(--ink); }
+.cn.app { background: var(--volt); color: var(--paper); border-color: var(--volt); padding: 16px 18px; }
+.cn.app .d { opacity: .85; }
+.cn.app:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.cn.app.sel { box-shadow: inset 0 0 0 3px var(--ink); }
+svg.c-wires { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 0; overflow: visible; }
+svg.c-wires path { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+svg.c-wires path.hi { stroke-width: 3; }
+.chain-foot { font-family: var(--mono); font-size: 12px; line-height: 1.6; max-width: 80ch; margin: 24px 0 0; }
+.chain-foot code { font-family: var(--mono); border: 1px solid var(--ink); padding: 1px 6px; }
+.chain-detail { margin-top: 28px; border-top: 1px solid var(--ink); padding-top: 20px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(24px, 4vw, 64px); }
+.chain-detail h4 { margin: 0; font-family: var(--mono); font-weight: 500; font-size: 17px; overflow-wrap: anywhere; }
+.chain-detail .role { margin: 8px 0 0; font-size: 17px; max-width: 46ch; }
+.chain-detail dl { margin: 0; display: grid; grid-template-columns: 130px minmax(0, 1fr); font-size: 14px; }
+.chain-detail dt, .chain-detail dd { margin: 0; padding: 9px 0; border-bottom: 1px solid var(--rule-y); }
+.chain-detail dt { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; padding-top: 11px; }
+.chain-detail .tag { display: inline-block; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; background: var(--ink); color: var(--signal); padding: 3px 8px; }
+.chain-hint { font-family: var(--mono); font-size: 12px; margin: 10px 0 0; opacity: .7; }
+@media (max-width: 900px) {
+  .chain-cols { grid-template-columns: minmax(0, 1fr); gap: 26px; }
+  .chain-col h3::before { content: "↓ "; }
+  .chain-col.c-rhino h3::before { content: ""; }
+  svg.c-wires { display: none; }
+  .chain-detail { grid-template-columns: minmax(0, 1fr); }
+  .chain-detail dl { grid-template-columns: minmax(0, 1fr); }
+  .chain-detail dt { border-bottom: 0; padding-bottom: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
 /* design explorer */
@@ -271,6 +321,7 @@ footer { padding-block: 40px 28px; border-top: 1px solid var(--ink); }
       <a href="#scope">Scope</a>
       <a href="#baseline">Our case</a>
       <a href="#headroom">Our tool</a>
+      <a href="#chain">Route map</a>
       <a href="#explore">Explorer</a>
       <a href="#building">Building</a>
       <a class="keep" href="#openness">Openness</a>
@@ -432,12 +483,73 @@ footer { padding-block: 40px 28px; border-top: 1px solid var(--ink); }
   </div>
 </section>
 
-<!-- 06 STARTER APP -->
+<!-- 06 ROUTE MAP: the chain at a glance -->
+<section class="band" id="chain">
+  <div class="wrap">
+    <div class="grid">
+      <div class="copy">
+        <div class="eyebrow"><span>06</span><span>Our tool · Route map</span></div>
+        <h2>The chain at a glance</h2>
+      </div>
+      <div class="copy">
+        <p class="lede-c">The web app never opens a Rhino file. Geometry and results are written to JSON by Python scripts, the EnergyPlus sweep adds simulated results, and the browser reads only JSON. Each link in the chain can be rerun on its own.</p>
+      </div>
+    </div>
+
+    <div class="chain-map" id="chainMap">
+      <svg class="c-wires" id="chainWires" aria-hidden="true"></svg>
+      <div class="chain-cols">
+        <div class="chain-col c-rhino">
+          <h3>Rhino 8</h3>
+          <div class="chain-stack">
+            <button class="cn" data-c="model">Model .3dm<br>+ Grasshopper<span class="d">FF components, read only</span></button>
+          </div>
+        </div>
+        <div class="chain-col c-exp">
+          <h3>Exporters</h3>
+          <div class="chain-stack">
+            <button class="cn" data-c="exp_gh"><span class="f">export_from_grasshopper.py</span><span class="d">official data, needs a solved script</span></button>
+            <button class="cn" data-c="exp_geo"><span class="f">export_atrium_geometry.py</span><span class="d">atrium zone from layers or keys</span></button>
+            <button class="cn" data-c="exp_sel"><span class="f">export_selection_to_json.py</span><span class="d">any selection, 3D view only</span></button>
+          </div>
+        </div>
+        <div class="chain-col c-json">
+          <h3>JSON</h3>
+          <div class="chain-stack">
+            <div class="c-group">
+              <button class="cn" data-c="sweep_inputs"><span class="f">sweep_inputs.json</span></button>
+              <button class="cn" data-c="atrium_geometry"><span class="f">atrium_geometry.json</span></button>
+              <button class="cn sweep" data-c="sweep_py">sweep_atrium.py · EnergyPlus</button>
+              <button class="cn" data-c="sweep_json"><span class="f">sweep.json</span><span class="d">3,125 + 40 runs</span></button>
+            </div>
+            <div class="c-group">
+              <button class="cn" data-c="display_json"><span class="f">baseline · climate<br>radiation · context</span><span class="d">design_catalogue.json</span></button>
+            </div>
+          </div>
+        </div>
+        <div class="chain-col c-app">
+          <h3>Web app</h3>
+          <div class="chain-stack">
+            <button class="cn app" data-c="model_js">model.js<span class="d">surrogate, metrics</span></button>
+            <button class="cn app" data-c="mech_js">mechanisms.js<span class="d">derived, proxy, approx</span></button>
+            <button class="cn app" data-c="app_js">app.js · viewer3d.js<span class="d">charts and 3D view</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="chain-foot">The Grasshopper exporter also writes the files on the lower right. Only the two files feeding <code>sweep_atrium.py</code> change simulated scores; everything else changes what is shown or estimated.</p>
+
+    <p class="chain-hint">Select any box to see what it reads, writes and how to rerun it.</p>
+    <div class="chain-detail" id="chainDetail" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- 07 STARTER APP -->
 <section class="band v" id="space">
   <div class="wrap">
     <div class="grid">
       <div class="copy">
-        <div class="eyebrow"><span>06</span><span>The brief · The starter app</span></div>
+        <div class="eyebrow"><span>07</span><span>The brief · The starter app</span></div>
         <h2>1,041 designs pass. Which one keeps passing?</h2>
       </div>
       <div class="copy">
@@ -454,7 +566,7 @@ footer { padding-block: 40px 28px; border-top: 1px solid var(--ink); }
   <div class="wrap">
     <div class="grid">
       <div class="copy">
-        <div class="eyebrow"><span>07</span><span>The brief · Design explorer</span></div>
+        <div class="eyebrow"><span>08</span><span>The brief · Design explorer</span></div>
         <h2>Explore 3,125 simulated designs</h2>
       </div>
       <div class="copy">
@@ -489,7 +601,7 @@ footer { padding-block: 40px 28px; border-top: 1px solid var(--ink); }
   <div class="wrap">
     <div class="grid">
       <div class="copy">
-        <div class="eyebrow"><span>08</span><span>Building · Envelope radiation</span></div>
+        <div class="eyebrow"><span>09</span><span>Building · Envelope radiation</span></div>
         <h2>Where the heat comes in</h2>
       </div>
       <div class="copy">
@@ -530,7 +642,7 @@ footer { padding-block: 40px 28px; border-top: 1px solid var(--ink); }
 <section class="band" id="heat">
   <div class="wrap grid flip">
     <div class="copy">
-      <div class="eyebrow"><span>09</span><span>Why · The heat balance</span></div>
+      <div class="eyebrow"><span>10</span><span>Why · The heat balance</span></div>
       <h2>A solar problem first, a night-cooling problem second</h2>
       <p>1,351 m² of unshaded roof glass. Solar gain is about 60 times the gains from people and equipment.</p>
       <div class="tbl"><table>
@@ -559,7 +671,7 @@ footer { padding-block: 40px 28px; border-top: 1px solid var(--ink); }
 <section class="band k" id="openness">
   <div class="wrap grid">
     <div class="copy">
-      <div class="eyebrow"><span>10</span><span>Significance</span><span>Openness Analysis tool</span></div>
+      <div class="eyebrow"><span>11</span><span>Significance</span><span>Openness Analysis tool</span></div>
       <h2>Why openness is the thing to analyse</h2>
       <ol class="steps">
         <li><i>01</i><div><b>Evaluate the existing building</b><span>Score the atrium as built before any proposal: 320.6 K·h, with 58 of 70 occupied hours above 26 °C.</span></div></li>
@@ -579,7 +691,7 @@ footer { padding-block: 40px 28px; border-top: 1px solid var(--ink); }
 <section class="band v" id="honesty">
   <div class="wrap grid">
     <div class="copy">
-      <div class="eyebrow"><span>11</span><span>Our tool · Trade-offs and honesty</span></div>
+      <div class="eyebrow"><span>12</span><span>Our tool · Trade-offs and honesty</span></div>
       <h2>Every number labelled, every error measured</h2>
       <p>A design with lots of headroom usually needs a heavy screen or very low g-value, which costs daylight, and big night vents. We plot headroom against daylight, vent opening and winter heat loss on one front.</p>
     </div>
@@ -604,7 +716,7 @@ footer { padding-block: 40px 28px; border-top: 1px solid var(--ink); }
   <div class="wrap">
     <div class="grid">
       <div class="copy">
-        <div class="eyebrow"><span>12</span><span>Why it wins</span></div>
+        <div class="eyebrow"><span>13</span><span>Why it wins</span></div>
         <h2>Built for all four criteria</h2>
       </div>
       <div class="copy">
@@ -1967,6 +2079,90 @@ const BLD={"north":60.9,"cats":["atrium_clerestory","atrium_roof","facade_E","fa
 
   if (bars) bars.still = true;
   setStudy("hot_week");
+})();
+</script>
+
+<script>
+// Route map: what each link of the chain reads, writes, how to rerun it, and what its numbers are.
+(() => {
+  const N = {
+    model: ["Model .3dm + Grasshopper", "Source of truth. Opened via RhinoSync only (Collaborate > Google Drive).",
+      "Central Trafford Wharf model and the starter Grasshopper script with FF components", "Nothing. Read only; the exporters pull from it.",
+      "Solve the starter script in Rhino 8 until the EVAL ID reads EC2F526D.", "Official"],
+    exp_gh: ["export_from_grasshopper.py", "Pulls the official inputs and results from a solved script.",
+      "Solved canvas: FF Climate Morph, Envelope Loader, Atrium EnergyPlus", "sweep_inputs.json, plus baseline, climate, radiation, context and design_catalogue.json",
+      "Run inside Rhino with the starter script solved.", "Official"],
+    exp_geo: ["export_atrium_geometry.py", "Writes the atrium zone the EnergyPlus box is built from.",
+      "Atrium geometry from named layers or user-text keys", "atrium_geometry.json",
+      "Run inside Rhino after editing the atrium layers.", "Official geometry"],
+    exp_sel: ["export_selection_to_json.py", "Dumps any selected geometry for the 3D view.",
+      "The current Rhino selection", "Display geometry JSON (context)",
+      "Select objects in Rhino, run the script.", "Display only, never scored"],
+    sweep_inputs: ["sweep_inputs.json", "Climate, schedules and fixed parameters the sweep needs.",
+      "Written by export_from_grasshopper.py", "Read by sweep_atrium.py",
+      "Re-export from Grasshopper.", "Official"],
+    atrium_geometry: ["atrium_geometry.json", "Atrium zone surfaces for the EnergyPlus model.",
+      "Written by export_atrium_geometry.py", "Read by sweep_atrium.py",
+      "Re-export from Rhino.", "Official"],
+    sweep_py: ["sweep_atrium.py · EnergyPlus", "Runs the official single-zone model over every lever combination: 5 levels each of g, U, day vent, night vent and roof screen.",
+      "sweep_inputs.json, atrium_geometry.json", "sweep.json",
+      "--quick first (32 designs, about 1 min), then the full run with --workers N.", "Simulated · EnergyPlus"],
+    sweep_json: ["sweep.json", "3,125 full-factorial runs plus 40 off-grid validation runs.",
+      "Written by sweep_atrium.py", "Read by model.js",
+      "Re-run the sweep.", "Simulated · EnergyPlus"],
+    display_json: ["baseline · climate · radiation · context · design_catalogue.json", "Everything shown or estimated, never scored. Radiation is Ladybug, 5,531 envelope faces.",
+      "Written by export_from_grasshopper.py and export_selection_to_json.py", "Read by mechanisms.js, app.js and viewer3d.js",
+      "Re-export from Rhino or Grasshopper.", "Official baseline · Ladybug · display"],
+    model_js: ["model.js", "Surrogate: multilinear interpolation over the 32 corners of the sweep grid, plus the score metrics.",
+      "sweep.json", "Score, peak, hours above 26 °C for any lever setting, ±4.8 K·h typical error, 20.4 worst",
+      "Pure function of sweep.json. Nothing to rerun.", "Interpolated from EnergyPlus"],
+    mech_js: ["mechanisms.js", "Derived and proxy numbers: daylight, winter heat loss, vent area, K·h per surface.",
+      "model.js output with radiation, baseline and climate", "Every number tagged derived, proxy or approx",
+      "Edit the assumptions in the file. EnergyPlus is not rerun.", "Estimated · assumed"],
+    app_js: ["app.js · viewer3d.js", "The charts and the 3D building view the audience uses.",
+      "model.js, mechanisms.js and the display JSON", "The screen",
+      "python -m http.server 8000, then open localhost:8000.", "Shown as labelled"],
+  };
+  // [from, to, vertical?] as drawn on the route map
+  const W = [["model","exp_gh"],["model","exp_geo"],["model","exp_sel"],
+    ["exp_gh","sweep_inputs"],["exp_gh","display_json"],["exp_geo","atrium_geometry"],["exp_sel","display_json"],
+    ["sweep_json","model_js"],["display_json","mech_js"],["display_json","app_js"],
+    ["model_js","mech_js",1],["mech_js","app_js",1]];
+  const map = document.getElementById("chainMap"), svg = document.getElementById("chainWires"), out = document.getElementById("chainDetail");
+  const q = id => map.querySelector(`[data-c="${id}"]`);
+  let sel = "sweep_py";
+
+  function pt(id, side){
+    const n = q(id), m = map.getBoundingClientRect(), r = n.getBoundingClientRect();
+    const b = (n.closest(".c-group") || n).getBoundingClientRect(), y = r.top + r.height / 2 - m.top + map.scrollTop;
+    const sx = map.scrollLeft;
+    if (side === "r") return [b.right - m.left + sx, y];
+    if (side === "l") return [b.left - m.left + sx, y];
+    return [r.left + r.width / 2 - m.left + sx, side === "b" ? r.bottom - m.top : r.top - m.top];
+  }
+  function draw(){
+    if (getComputedStyle(svg).display === "none") return;
+    svg.setAttribute("width", map.scrollWidth); svg.setAttribute("height", map.scrollHeight);
+    svg.innerHTML = W.map(([a, b, v]) => {
+      let d;
+      if (v){ const [x1, y1] = pt(a, "b"), [x2, y2] = pt(b, "t"); d = `M${x1},${y1}L${x2},${y2}`; }
+      else { const [x1, y1] = pt(a, "r"), [x2, y2] = pt(b, "l"), mx = (x1 + x2) / 2; d = `M${x1},${y1}C${mx},${y1} ${mx},${y2} ${x2},${y2}`; }
+      return `<path d="${d}"${a === sel || b === sel ? ' class="hi"' : ""}/>`;
+    }).join("");
+  }
+  function show(id){
+    sel = id;
+    map.querySelectorAll(".cn").forEach(n => n.classList.toggle("sel", n.dataset.c === id));
+    const [t, role, reads, writes, rerun, src] = N[id];
+    out.innerHTML = `<div><h4>${t}</h4><p class="role">${role}</p></div>
+      <dl><dt>Reads</dt><dd>${reads}</dd><dt>Writes</dt><dd>${writes}</dd><dt>Rerun</dt><dd>${rerun}</dd>
+      <dt>Numbers are</dt><dd><span class="tag">${src}</span></dd></dl>`;
+    draw();
+  }
+  map.querySelectorAll(".cn").forEach(n => n.addEventListener("click", () => show(n.dataset.c)));
+  addEventListener("resize", draw);
+  if (document.fonts) document.fonts.ready.then(draw);
+  show(sel);
 })();
 </script>
 

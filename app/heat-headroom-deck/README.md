@@ -1,6 +1,6 @@
 # Heat Headroom deck (imported artefact)
 
-`index.html` is the Team 05 "Heat Headroom" interactive deck, saved from
+`index.html` is the Team 05 "Heat Headroom" interactive deck. Live copy with the route map section (06): https://claude.ai/artifact/EuEh3UfwiqPBq4Vw9iNJcH. Originally saved from
 https://claude.ai/artifact/UWPrqdPZUXfDGnTstiZzaN on 16 Oct 2026. The only change is that the artifact host's injected `frame-runtime` preamble has been removed.
 
 It is one self-contained file (about 1.7 MB). Its data is inlined as JS constants:
