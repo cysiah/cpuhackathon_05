@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Route Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F4; --card:#FFFFFF; --node:#E5E8EC; --node-hi:#D9DEE4; --ink:#1E2229; --ink-2:#5B6370;
+  --line:#5B6370; --sweep:#CC8A35; --app:#3A5BA8; --app-ink:#FFFFFF;
+  --ok:#2E7D4F; --miss:#B83A14; --ext:#5B6370;
+  --sans:"Archivo",system-ui,sans-serif; --serif:"Source Serif 4",Georgia,serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans)}
+main{max-width:1240px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:clamp(28px,4vw,44px);font-weight:800;margin:0 0 12px;letter-spacing:-.01em}
+.lede{font-family:var(--serif);font-size:clamp(17px,1.6vw,21px);line-height:1.5;max-width:68ch;margin:0 0 28px}
+.card{background:var(--card);border:1px solid #D5DAE0;border-radius:6px;padding:28px 28px 22px;position:relative}
+.grid{display:grid;grid-template-columns:.75fr 1fr 1fr .8fr;gap:0 64px;position:relative;z-index:1}
+.col h2{font-size:12px;letter-spacing:.14em;font-weight:600;color:var(--ink-2);margin:0 0 18px}
+.stack{display:flex;flex-direction:column;gap:22px;height:calc(100% - 34px)}
+.col.rhino .stack{justify-content:center}
+.col.json .stack{justify-content:space-between}
+.col.app .stack{gap:12px}
+.node{background:var(--node);border-radius:6px;padding:14px 16px;cursor:pointer;border:2px solid transparent;text-align:left;font:inherit;color:inherit;width:100%;display:block;position:relative}
+.node:hover,.node:focus-visible{background:var(--node-hi);outline:none}
+.node.sel{border-color:var(--ink)}
+.node .f{font-family:var(--mono);font-size:14px;display:block;line-height:1.6}
+.node .d{font-size:13px;color:var(--ink-2);display:block;margin-top:2px}
+.node.app{background:var(--app);color:var(--app-ink);font-weight:600;font-size:15px;line-height:1.5;padding:16px 18px}
+.node.app .d{color:#DCE4F5;font-weight:600}
+.node.app.sel{border-color:var(--ink)}
+.node.sweep{background:var(--sweep);color:#fff;font-weight:600;margin:10px 0 12px;padding:10px 14px}
+.node.sweep.sel{border-color:var(--ink)}
+.group{background:var(--node);border-radius:6px;padding:14px 16px}
+.group .node{background:transparent;padding:2px 0}
+.group .node:hover{background:transparent;text-decoration:underline}
+.group .node.sweep{background:var(--sweep);padding:10px 14px}
+.dot{position:absolute;top:8px;right:8px;width:9px;height:9px;border-radius:50%;background:transparent}
+.dot.ok{background:var(--ok)} .dot.miss{background:var(--miss)} .dot.ext{background:var(--ext)}
+.group .node .dot{top:50%;transform:translateY(-50%);right:-6px}
+svg.wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+svg.wires path{fill:none;stroke:var(--line);stroke-width:1.6}
+svg.wires path.hi{stroke:var(--miss);stroke-width:2.4}
+.foot{font-size:14px;color:var(--ink-2);margin:26px 0 0;line-height:1.6}
+code{font-family:var(--mono);font-size:13px;background:var(--node);padding:2px 6px;border-radius:3px}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--ink-2);margin-top:14px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+#panel{margin-top:20px;background:var(--card);border:1px solid #D5DAE0;border-radius:6px;padding:20px 24px;display:none}
+#panel.on{display:block}
+#panel h3{margin:0 0 4px;font-family:var(--mono);font-weight:500;font-size:17px}
+#panel .role{color:var(--ink-2);font-size:14px;margin:0 0 14px}
+#panel dl{display:grid;grid-template-columns:130px 1fr;gap:8px 16px;margin:0;font-size:14px;line-height:1.5}
+#panel dt{color:var(--ink-2);font-weight:600}
+#panel dd{margin:0}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--node);margin-right:6px}
+@media (max-width:860px){
+  .grid{grid-template-columns:1fr;gap:28px}
+  .stack{height:auto}
+  svg.wires{display:none}
+  .card{padding:20px 16px}
+  #panel dl{grid-template-columns:1fr}
+  #panel dt{margin-top:6px}
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>The chain at a glance</h1>
+  <p class="lede">The web app never opens a Rhino file. Geometry and results are written to JSON by Python scripts, the EnergyPlus sweep adds simulated results, and the browser reads only JSON. Each link in the chain can be rerun on its own.</p>
+
+  <div class="card" id="card">
+    <svg class="wires" id="wires" aria-hidden="true"></svg>
+    <div class="grid">
+      <div class="col rhino">
+        <h2>RHINO 8</h2>
+        <div class="stack">
+          <button class="node" data-id="model"><span>Model .3dm<br>+ Grasshopper</span><span class="d">FF components, read only</span><i class="dot"></i></button>
+        </div>
+      </div>
+      <div class="col exp">
+        <h2>EXPORTERS</h2>
+        <div class="stack">
+          <button class="node" data-id="exp_gh"><span class="f">export_from_grasshopper.py</span><span class="d">official data, needs a solved script</span><i class="dot"></i></button>
+          <button class="node" data-id="exp_geo"><span class="f">export_atrium_geometry.py</span><span class="d">atrium zone from layers or keys</span><i class="dot"></i></button>
+          <button class="node" data-id="exp_sel"><span class="f">export_selection_to_json.py</span><span class="d">any selection, 3D view only</span><i class="dot"></i></button>
+        </div>
+      </div>
+      <div class="col json">
+        <h2>JSON</h2>
+        <div class="stack">
+          <div class="group" id="g_top">
+            <button class="node" data-id="sweep_inputs"><span class="f">sweep_inputs.json</span><i class="dot"></i></button>
+            <button class="node" data-id="atrium_geometry"><span class="f">atrium_geometry.json</span><i class="dot"></i></button>
+            <button class="node sweep" data-id="sweep_py">sweep_atrium.py · EnergyPlus<i class="dot"></i></button>
+            <button class="node" data-id="sweep_json"><span class="f">sweep.json</span><span class="d">3,125 + 40 runs</span><i class="dot"></i></button>
+          </div>
+          <div class="group" id="g_low">
+            <button class="node" data-id="display_json"><span class="f">baseline · climate<br>radiation · context</span><span class="d">design_catalogue.json</span><i class="dot"></i></button>
+          </div>
+        </div>
+      </div>
+      <div class="col app">
+        <h2>WEB APP</h2>
+        <div class="stack">
+          <button class="node app" data-id="model_js">model.js<span class="d">surrogate, metrics</span><i class="dot"></i></button>
+          <button class="node app" data-id="mech_js">mechanisms.js<span class="d">derived, proxy, approx</span><i class="dot"></i></button>
+          <button class="node app" data-id="app_js">app.js · viewer3d.js<span class="d">charts and 3D view</span><i class="dot"></i></button>
+        </div>
+      </div>
+    </div>
+    <p class="foot">The Grasshopper exporter also writes the files on the lower right. Only the two files feeding <code>sweep_atrium.py</code> change simulated scores; everything else changes what is shown or estimated.</p>
+    <div class="legend" id="legend">
+      <span><i style="background:var(--ok)"></i>in the repo</span>
+      <span><i style="background:var(--miss)"></i>missing, to build or copy in</span>
+      <span><i style="background:var(--ext)"></i>outside the repo</span>
+      <span id="fileNote"></span>
+    </div>
+  </div>
+
+  <section id="panel" aria-live="polite"></section>
+</main>
+
+<script>
+// Each node of the chain: what it is, what it reads and writes, how to rerun it,
+// and which repo files must exist for it to count as present.
+const NODES = {
+  model: {title:"Model .3dm + Grasshopper", role:"Source of truth. Opened via RhinoSync only (Collaborate > Google Drive).",
+    reads:"Central Trafford Wharf model, starter Grasshopper script with FF components", writes:"Nothing. Read only; exporters pull from it.",
+    rerun:"Solve the starter script in Rhino 8 until EVAL ID reads EC2F526D.", source:"Official", files:[], external:true},
+  exp_gh: {title:"tools/export_from_grasshopper.py", role:"Pulls the official inputs and results from a solved script.",
+    reads:"Solved Grasshopper canvas (FF Climate Morph, Envelope Loader, Atrium EnergyPlus)", writes:"sweep_inputs.json, plus baseline, climate, radiation, context, design_catalogue.json",
+    rerun:"Run inside Rhino (ScriptEditor) with the starter script solved.", source:"Official", files:["tools/export_from_grasshopper.py"]},
+  exp_geo: {title:"tools/export_atrium_geometry.py", role:"Writes the atrium zone the EnergyPlus box is built from.",
+    reads:"Atrium geometry from named layers or user-text keys", writes:"atrium_geometry.json",
+    rerun:"Run inside Rhino after editing the atrium layers.", source:"Official geometry", files:["tools/export_atrium_geometry.py"]},
+  exp_sel: {title:"tools/export_selection_to_json.py", role:"Dumps any selected geometry for display only.",
+    reads:"Current Rhino selection", writes:"context / display geometry JSON",
+    rerun:"Select objects in Rhino, run the script.", source:"Display only, never scored", files:["tools/export_selection_to_json.py"]},
+  sweep_inputs: {title:"data/sweep_inputs.json", role:"Climate, schedules and fixed parameters the sweep needs.",
+    reads:"Written by export_from_grasshopper.py", writes:"Read by sweep_atrium.py",
+    rerun:"Re-export from Grasshopper.", source:"Official", files:["data/sweep_inputs.json"]},
+  atrium_geometry: {title:"data/atrium_geometry.json", role:"Atrium zone surfaces for the EnergyPlus model.",
+    reads:"Written by export_atrium_geometry.py", writes:"Read by sweep_atrium.py",
+    rerun:"Re-export from Rhino.", source:"Official", files:["data/atrium_geometry.json"]},
+  sweep_py: {title:"tools/sweep_atrium.py · EnergyPlus", role:"Runs the official single-zone model over every lever combination.",
+    reads:"sweep_inputs.json, atrium_geometry.json", writes:"sweep.json",
+    rerun:"python tools/sweep_atrium.py --quick (32 designs, ~1 min), then full with --workers N.", source:"Simulated (EnergyPlus)", files:["tools/sweep_atrium.py"]},
+  sweep_json: {title:"data/sweep.json", role:"5 levels × 5 levers = 3,125 runs, plus 40 off-grid validation runs.",
+    reads:"Written by sweep_atrium.py", writes:"Read by model.js",
+    rerun:"Re-run the sweep. Current copy recovered from the Heat Headroom deck.", source:"Simulated (EnergyPlus)", files:["data/sweep.json"]},
+  display_json: {title:"data/baseline · climate · radiation · context · design_catalogue.json", role:"Everything shown or estimated, never scored.",
+    reads:"Written by export_from_grasshopper.py and export_selection_to_json.py", writes:"Read by mechanisms.js, app.js, viewer3d.js",
+    rerun:"Re-export. Current baseline/climate/radiation/context recovered from the Heat Headroom deck; design_catalogue still to make.",
+    source:"Official baseline; Ladybug radiation; context display only",
+    files:["data/baseline.json","data/climate.json","data/radiation.json","data/context.json","data/design_catalogue.json"]},
+  model_js: {title:"js/model.js", role:"Surrogate: multilinear interpolation over the 32 corners of the sweep grid, plus the score metrics.",
+    reads:"sweep.json", writes:"Score, peak, hours > 26 °C for any lever setting, with interpolation error (±4.8 typical, 20.4 worst)",
+    rerun:"Pure function of sweep.json.", source:"Interpolated from EnergyPlus", files:["js/model.js"]},
+  mech_js: {title:"js/mechanisms.js", role:"Derived and proxy numbers: daylight, winter loss, vent area, K·h per surface.",
+    reads:"model.js output + radiation, baseline, climate", writes:"Each number tagged derived / proxy / approx",
+    rerun:"Edit assumptions in the file; no rerun of EnergyPlus.", source:"Estimated / assumed", files:["js/mechanisms.js"]},
+  app_js: {title:"js/app.js · js/viewer3d.js", role:"Charts and the 3D building view the audience uses.",
+    reads:"model.js, mechanisms.js, display JSON", writes:"The screen",
+    rerun:"python -m http.server 8000 in tool/, open localhost:8000.", source:"—", files:["js/app.js","js/viewer3d.js"]},
+};
+
+// Wires as drawn on the route map: [from, to, fromSide, toSide]
+const WIRES = [
+  ["model","exp_gh"],["model","exp_geo"],["model","exp_sel"],
+  ["exp_gh","sweep_inputs"],["exp_gh","display_json"],
+  ["exp_geo","atrium_geometry"],
+  ["exp_sel","display_json"],
+  ["sweep_json","model_js"],
+  ["display_json","mech_js"],["display_json","app_js"],
+  ["model_js","mech_js","v"],["mech_js","app_js","v"],
+];
+
+const el = id => document.querySelector(`[data-id="${id}"]`);
+const card = document.getElementById("card"), svg = document.getElementById("wires");
+let selected = null;
+
+function anchor(id, side){
+  const n = el(id), c = card.getBoundingClientRect();
+  // Items inside a JSON group connect at the group's edge so wires meet the box, not the text.
+  const box = (n.closest(".group") || n).getBoundingClientRect(), r = n.getBoundingClientRect();
+  const y = r.top + r.height/2 - c.top;
+  if (side === "r") return [box.right - c.left, y];
+  if (side === "l") return [box.left - c.left, y];
+  if (side === "b") return [r.left + r.width/2 - c.left, r.bottom - c.top];
+  return [r.left + r.width/2 - c.left, r.top - c.top];
+}
+
+function draw(){
+  svg.innerHTML = "";
+  for (const [a, b, kind] of WIRES){
+    let d;
+    if (kind === "v"){
+      const [x1,y1] = anchor(a,"b"), [x2,y2] = anchor(b,"t");
+      d = `M${x1},${y1} L${x2},${y2}`;
+    } else {
+      const [x1,y1] = anchor(a,"r"), [x2,y2] = anchor(b,"l"), mx = (x1+x2)/2;
+      d = `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+    }
+    const p = document.createElementNS("http://www.w3.org/2000/svg","path");
+    p.setAttribute("d", d);
+    if (selected && (a === selected || b === selected)) p.classList.add("hi");
+    svg.appendChild(p);
+  }
+}
+
+const status = {};
+async function exists(path){
+  try { const r = await fetch(path, {method:"HEAD", cache:"no-store"}); return r.ok; }
+  catch { return null; }
+}
+async function checkFiles(){
+  const served = location.protocol.startsWith("http");
+  document.getElementById("fileNote").textContent = served ? "" : "Serve this folder (python -m http.server) to check which files exist.";
+  for (const [id, n] of Object.entries(NODES)){
+    const dot = el(id).querySelector(".dot");
+    if (n.external){ status[id] = "ext"; dot.className = "dot ext"; continue; }
+    if (!served) continue;
+    const res = await Promise.all(n.files.map(exists));
+    n.present = n.files.filter((_, i) => res[i]);
+    status[id] = n.present.length === n.files.length ? "ok" : "miss";
+    dot.className = "dot " + status[id];
+  }
+  if (selected) show(selected);
+}
+
+function show(id){
+  selected = id;
+  document.querySelectorAll(".node").forEach(n => n.classList.toggle("sel", n.dataset.id === id));
+  const n = NODES[id], p = document.getElementById("panel");
+  const files = n.external ? "Outside the repo (Google Drive / RhinoSync)"
+    : n.files.map(f => `<code>${f}</code> ${n.present ? (n.present.includes(f) ? "✓" : "<b style='color:var(--miss)'>missing</b>") : ""}`).join("<br>");
+  p.innerHTML = `<h3>${n.title}</h3><p class="role">${n.role}</p>
+    <dl><dt>Reads</dt><dd>${n.reads}</dd><dt>Writes</dt><dd>${n.writes}</dd>
+    <dt>Rerun</dt><dd>${n.rerun}</dd><dt>Numbers are</dt><dd><span class="tag">${n.source}</span></dd>
+    <dt>Files</dt><dd>${files}</dd></dl>`;
+  p.classList.add("on");
+  draw();
+}
+
+document.querySelectorAll(".node").forEach(n => n.addEventListener("click", () => show(n.dataset.id)));
+addEventListener("resize", draw);
+document.fonts?.ready.then(draw);
+draw(); checkFiles();
+</script>
+</body>
+</html>

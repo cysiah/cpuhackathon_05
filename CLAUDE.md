@@ -6,3 +6,4 @@ Read `docs/CONTEXT_FROM_RHINO_CHAT.md` first. It holds the full project context:
 
 - Heat Headroom is parked; don't resume it unless asked.
 - Units: mm and degrees.
+- The tool's main route map is `docs/ROUTE_MAP.md` (live in `tool/index.html`): Rhino → exporters → JSON → web app. Put new files on a link of that chain.
